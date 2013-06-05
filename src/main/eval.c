@@ -1197,7 +1197,7 @@ static SEXP EnsureLocal(SEXP symbol, SEXP rho)
     if ((vl = findVarInFrame3(rho, symbol, TRUE)) != R_UnboundValue) {
 	vl = eval(symbol, rho);	/* for promises */
 	if(NAMED(vl) == 2) {
-	    PROTECT(vl = duplicate(vl));
+	    PROTECT(vl = shallow_duplicate(vl));
 	    defineVar(symbol, vl, rho);
 	    UNPROTECT(1);
 	    SET_NAMED(vl, 1);
@@ -1209,7 +1209,7 @@ static SEXP EnsureLocal(SEXP symbol, SEXP rho)
     if (vl == R_UnboundValue)
 	error(_("object '%s' not found"), CHAR(PRINTNAME(symbol)));
 
-    PROTECT(vl = duplicate(vl));
+    PROTECT(vl = shallow_duplicate(vl));
     defineVar(symbol, vl, rho);
     UNPROTECT(1);
     SET_NAMED(vl, 1);
