@@ -659,6 +659,7 @@ SEXP Rf_dimgets(SEXP, SEXP);
 SEXP Rf_dimnamesgets(SEXP, SEXP);
 SEXP Rf_DropDims(SEXP);
 SEXP Rf_duplicate(SEXP);
+SEXP Rf_shallow_duplicate(SEXP);
 /* the next really should not be here and is also in Defn.h */
 SEXP Rf_duplicated(SEXP, Rboolean);
 SEXP Rf_eval(SEXP, SEXP);
@@ -961,6 +962,7 @@ void R_orderVector(int *indx, int n, SEXP arglist, Rboolean nalast, Rboolean dec
 #define dimnamesgets		Rf_dimnamesgets
 #define DropDims                Rf_DropDims
 #define duplicate		Rf_duplicate
+#define shallow_duplicate	Rf_shallow_duplicate
 #define duplicated		Rf_duplicated
 #define elt			Rf_elt
 #define errorcall		Rf_errorcall

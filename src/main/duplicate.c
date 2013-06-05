@@ -49,7 +49,7 @@
   PROTECT(to = allocVector(TYPEOF(from), __n__)); \
   if (__n__ == 1) fun(to)[0] = fun(from)[0]; \
   else memcpy(fun(to), fun(from), __n__ * sizeof(type)); \
-  DUPLICATE_ATTRIB(to, from); \
+  DUPLICATE_ATTRIB(to, from, TRUE);                           \
   SET_TRUELENGTH(to, XTRUELENGTH(from)); \
   UNPROTECT(2); \
 } while (0)
@@ -58,10 +58,10 @@
    assignment functions (and duplicate in the case of ATTRIB) when the
    ATTRIB or TAG value to be stored is R_NilValue, the value the field
    will have been set to by the allocation function */
-#define DUPLICATE_ATTRIB(to, from) do {\
+#define DUPLICATE_ATTRIB(to, from, deeply) do {        \
   SEXP __a__ = ATTRIB(from); \
   if (__a__ != R_NilValue) { \
-    SET_ATTRIB(to, duplicate1(__a__)); \
+    SET_ATTRIB(to, duplicate_child(__a__, deeply));      \
     SET_OBJECT(to, OBJECT(from)); \
     IS_S4_OBJECT(from) ? SET_S4_OBJECT(to) : UNSET_S4_OBJECT(to);  \
   } \
@@ -83,7 +83,7 @@
    is not defined, because we still need to be able to
    optionally rename duplicate() as Rf_duplicate().
 */
-static SEXP duplicate1(SEXP);
+static SEXP duplicate1(SEXP, Rboolean deeply);
 
 #ifdef R_PROFILING
 static unsigned long duplicate_counter = (unsigned long)-1;
@@ -107,7 +107,7 @@ SEXP duplicate(SEXP s){
 #ifdef R_PROFILING
     duplicate_counter++;
 #endif
-    t = duplicate1(s);
+    t = duplicate1(s, TRUE);
 #ifdef R_MEMORY_PROFILING
     if (RTRACE(s) && !(TYPEOF(s) == CLOSXP || TYPEOF(s) == BUILTINSXP ||
 		      TYPEOF(s) == SPECIALSXP || TYPEOF(s) == PROMSXP ||
@@ -119,9 +119,69 @@ SEXP duplicate(SEXP s){
     return t;
 }
 
-/*****************/
+/******* Shallow duplication **********/
 
-static SEXP duplicate1(SEXP s)
+SEXP shallow_duplicate(SEXP s) {
+    SEXP t;
+
+#ifdef R_PROFILING
+    duplicate_counter++;
+#endif
+    t = duplicate1(s, FALSE);
+#ifdef R_MEMORY_PROFILING
+    if (RTRACE(s) && !(TYPEOF(s) == CLOSXP || TYPEOF(s) == BUILTINSXP ||
+                       TYPEOF(s) == SPECIALSXP || TYPEOF(s) == PROMSXP ||
+                       TYPEOF(s) == ENVSXP)){
+        memtrace_report(s,t);
+        SET_RTRACE(t,1);
+    }
+#endif
+    return t;
+}
+
+static SEXP lazy_duplicate(SEXP s) {
+    switch (TYPEOF(s)) {
+    case NILSXP:
+    case SYMSXP:
+    case ENVSXP:
+    case SPECIALSXP:
+    case BUILTINSXP:
+    case EXTPTRSXP:
+    case BCODESXP:
+    case WEAKREFSXP:
+    case CHARSXP:
+    case PROMSXP:
+	break;
+    case CLOSXP:
+    case LISTSXP:
+    case LANGSXP:
+    case DOTSXP:
+    case EXPRSXP:
+    case VECSXP:
+    case LGLSXP:
+    case INTSXP:
+    case REALSXP:
+    case CPLXSXP:
+    case RAWSXP:
+    case STRSXP:
+    case S4SXP:
+        SET_NAMED(s, 2);
+	break;
+    default:
+	UNIMPLEMENTED_TYPE("lazy_duplicate", s);
+    }
+    return s;
+}
+
+static SEXP duplicate_child(SEXP s, Rboolean deeply) {
+    if (deeply) {
+        return duplicate1(s, TRUE);
+    } else {
+        return lazy_duplicate(s);
+    }
+}
+
+static SEXP duplicate1(SEXP s, Rboolean deeply)
 {
     SEXP h, t,  sp;
     R_xlen_t i, n;
@@ -150,17 +210,17 @@ static SEXP duplicate1(SEXP s)
 	SET_FORMALS(t, FORMALS(s));
 	SET_BODY(t, BODY(s));
 	SET_CLOENV(t, CLOENV(s));
-	DUPLICATE_ATTRIB(t, s);
+	DUPLICATE_ATTRIB(t, s, deeply);
 	UNPROTECT(2);
 	break;
     case LISTSXP:
 	PROTECT(sp = s);
 	PROTECT(h = t = CONS(R_NilValue, R_NilValue));
 	while(sp != R_NilValue) {
-	    SETCDR(t, CONS(duplicate1(CAR(sp)), R_NilValue));
+	    SETCDR(t, CONS(duplicate_child(CAR(sp), deeply), R_NilValue));
 	    t = CDR(t);
 	    COPY_TAG(t, sp);
-	    DUPLICATE_ATTRIB(t, sp);
+	    DUPLICATE_ATTRIB(t, sp, deeply);
 	    sp = CDR(sp);
 	}
 	t = CDR(h);
@@ -170,30 +230,30 @@ static SEXP duplicate1(SEXP s)
 	PROTECT(sp = s);
 	PROTECT(h = t = CONS(R_NilValue, R_NilValue));
 	while(sp != R_NilValue) {
-	    SETCDR(t, CONS(duplicate1(CAR(sp)), R_NilValue));
+	    SETCDR(t, CONS(duplicate_child(CAR(sp), deeply), R_NilValue));
 	    t = CDR(t);
 	    COPY_TAG(t, sp);
-	    DUPLICATE_ATTRIB(t, sp);
+	    DUPLICATE_ATTRIB(t, sp, deeply);
 	    sp = CDR(sp);
 	}
 	t = CDR(h);
 	SET_TYPEOF(t, LANGSXP);
-	DUPLICATE_ATTRIB(t, s);
+	DUPLICATE_ATTRIB(t, s, deeply);
 	UNPROTECT(2);
 	break;
     case DOTSXP:
 	PROTECT(sp = s);
 	PROTECT(h = t = CONS(R_NilValue, R_NilValue));
 	while(sp != R_NilValue) {
-	    SETCDR(t, CONS(duplicate1(CAR(sp)), R_NilValue));
+            SETCDR(t, CONS(duplicate_child(CAR(sp), deeply), R_NilValue));
 	    t = CDR(t);
 	    COPY_TAG(t, sp);
-	    DUPLICATE_ATTRIB(t, sp);
+	    DUPLICATE_ATTRIB(t, sp, deeply);
 	    sp = CDR(sp);
 	}
 	t = CDR(h);
 	SET_TYPEOF(t, DOTSXP);
-	DUPLICATE_ATTRIB(t, s);
+	DUPLICATE_ATTRIB(t, s, deeply);
 	UNPROTECT(2);
 	break;
     case CHARSXP:
@@ -205,8 +265,8 @@ static SEXP duplicate1(SEXP s)
 	PROTECT(s);
 	PROTECT(t = allocVector(TYPEOF(s), n));
 	for(i = 0 ; i < n ; i++)
-	    SET_VECTOR_ELT(t, i, duplicate1(VECTOR_ELT(s, i)));
-	DUPLICATE_ATTRIB(t, s);
+	    SET_VECTOR_ELT(t, i, duplicate_child(VECTOR_ELT(s, i), deeply));
+	DUPLICATE_ATTRIB(t, s, deeply);
 	SET_TRUELENGTH(t, TRUELENGTH(s));
 	UNPROTECT(2);
 	break;
@@ -227,7 +287,7 @@ static SEXP duplicate1(SEXP s)
     case S4SXP:
 	PROTECT(s);
 	PROTECT(t = allocS4Object());
-	DUPLICATE_ATTRIB(t, s);
+	DUPLICATE_ATTRIB(t, s, deeply);
 	UNPROTECT(2);
 	break;
     default:
