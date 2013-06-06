@@ -61,7 +61,7 @@
 #define DUPLICATE_ATTRIB(to, from, deeply) do {        \
   SEXP __a__ = ATTRIB(from); \
   if (__a__ != R_NilValue) { \
-    SET_ATTRIB(to, duplicate_child(__a__, deeply));      \
+    SET_ATTRIB(to, duplicate1(__a__, deeply));      \
     SET_OBJECT(to, OBJECT(from)); \
     IS_S4_OBJECT(from) ? SET_S4_OBJECT(to) : UNSET_S4_OBJECT(to);  \
   } \
