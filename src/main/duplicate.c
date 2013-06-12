@@ -109,6 +109,7 @@ SEXP duplicate(SEXP s){
 #endif
     t = duplicate1(s, TRUE);
 #ifdef R_MEMORY_PROFILING
+    Rprintf("[^DEEP^] ");
     if (RTRACE(s) && !(TYPEOF(s) == CLOSXP || TYPEOF(s) == BUILTINSXP ||
 		      TYPEOF(s) == SPECIALSXP || TYPEOF(s) == PROMSXP ||
 		      TYPEOF(s) == ENVSXP)){
@@ -129,6 +130,7 @@ SEXP shallow_duplicate(SEXP s) {
 #endif
     t = duplicate1(s, FALSE);
 #ifdef R_MEMORY_PROFILING
+    Rprintf("[_shallow_] ");
     if (RTRACE(s) && !(TYPEOF(s) == CLOSXP || TYPEOF(s) == BUILTINSXP ||
                        TYPEOF(s) == SPECIALSXP || TYPEOF(s) == PROMSXP ||
                        TYPEOF(s) == ENVSXP)){
