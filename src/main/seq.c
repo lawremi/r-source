@@ -311,7 +311,7 @@ static SEXP rep3(SEXP s, R_xlen_t ns, R_xlen_t na)
 	for (i = 0, j = 0; i < na;) {
 //	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	    if (j >= ns) j = 0;
-	    SET_VECTOR_ELT(a, i++, duplicate(VECTOR_ELT(s, j++)));
+	    SET_VECTOR_ELT(a, i++, lazy_duplicate(VECTOR_ELT(s, j++)));
 	}
 	break;
     default:
