@@ -233,7 +233,7 @@ SEXP setAttrib(SEXP vec, SEXP name, SEXP val)
     if (vec == R_NilValue)
 	error(_("attempt to set an attribute on NULL"));
 
-    if (NAMED(val)) val = duplicate(val);
+    if (NAMED(val)) val = lazy_duplicate(val);
     SET_NAMED(val, NAMED(val) | NAMED(vec));
     UNPROTECT(2);
 
