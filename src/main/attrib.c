@@ -893,7 +893,7 @@ SEXP attribute_hidden do_dimnamesgets(SEXP call, SEXP op, SEXP args, SEXP env)
     if (DispatchOrEval(call, op, "dimnames<-", args, env, &ans, 0, 1))
 	return(ans);
     PROTECT(args = ans);
-    if (NAMED(CAR(args)) > 1) SETCAR(args, duplicate(CAR(args)));
+    if (NAMED(CAR(args)) > 1) SETCAR(args, shallow_duplicate(CAR(args)));
     setAttrib(CAR(args), R_DimNamesSymbol, CADR(args));
     UNPROTECT(1);
     SET_NAMED(CAR(args), 0);
