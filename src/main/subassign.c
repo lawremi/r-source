@@ -512,7 +512,7 @@ static SEXP VectorAssign(SEXP call, SEXP x, SEXP s, SEXP y)
     /* objects.  A full duplication is wasteful. */
 
     if (x == y)
-	PROTECT(y = duplicate(y));
+	PROTECT(y = shallow_duplicate(y));
     else
 	PROTECT(y);
 
@@ -791,7 +791,7 @@ static SEXP MatrixAssign(SEXP call, SEXP x, SEXP s, SEXP y)
     /* objects.  A full duplication is wasteful. */
 
     if (x == y)
-	PROTECT(y = duplicate(y));
+	PROTECT(y = shallow_duplicate(y));
     else
 	PROTECT(y);
 
@@ -1082,7 +1082,7 @@ static SEXP ArrayAssign(SEXP call, SEXP x, SEXP s, SEXP y)
     /* objects.  A full duplication is wasteful. */
 
     if (x == y)
-	PROTECT(y = duplicate(y));
+	PROTECT(y = shallow_duplicate(y));
     else
 	PROTECT(y);
 
@@ -1388,7 +1388,7 @@ SEXP attribute_hidden do_subassign_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* Shouldn't x be protected?  It is (as args is)! */
 
     if (NAMED(CAR(args)) == 2)
-	x = SETCAR(args, duplicate(CAR(args)));
+	x = SETCAR(args, shallow_duplicate(CAR(args)));
 
     SubAssignArgs(args, &x, &subs, &y);
     S4 = IS_S4_OBJECT(x);
@@ -1541,7 +1541,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* If it is not, then make a local copy. */
 
     if (NAMED(x) == 2)
-	SETCAR(args, x = duplicate(x));
+	SETCAR(args, x = shallow_duplicate(x));
 
     xtop = xup = x; /* x will be the element which is assigned to */
 
