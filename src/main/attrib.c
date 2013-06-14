@@ -1643,7 +1643,7 @@ SEXP R_do_slot_assign(SEXP obj, SEXP name, SEXP value) {
 	/* simplified version of setAttrib(obj, name, value);
 	   here we do *not* treat "names", "dimnames", "dim", .. specially : */
 	PROTECT(name);
-	if (NAMED(value)) value = duplicate(value);
+	if (NAMED(value)) value = lazy_duplicate(value);
 	SET_NAMED(value, NAMED(value) | NAMED(obj));
 	UNPROTECT(1);
 	installAttrib(obj, name, value);
