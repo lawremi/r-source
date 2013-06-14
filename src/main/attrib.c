@@ -1711,7 +1711,7 @@ R_getS4DataSlot(SEXP obj, SEXPTYPE type)
     if(s3class == R_NilValue && type == S4SXP)
       return R_NilValue;
     PROTECT(s3class);
-    if(NAMED(obj)) obj = duplicate(obj);
+    if(NAMED(obj)) obj = shallow_duplicate(obj);
     UNPROTECT(1);
     if(s3class != R_NilValue) {/* replace class with S3 class */
       setAttrib(obj, R_ClassSymbol, s3class);
