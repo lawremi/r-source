@@ -1417,7 +1417,7 @@ SEXP attribute_hidden do_attrgets(SEXP call, SEXP op, SEXP args, SEXP env)
 
     obj = CAR(args);
     if (NAMED(obj) == 2)
-	PROTECT(obj = duplicate(obj));
+	PROTECT(obj = shallow_duplicate(obj));
     else
 	PROTECT(obj);
 
