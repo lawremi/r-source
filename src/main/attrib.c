@@ -1190,7 +1190,7 @@ SEXP attribute_hidden do_attributesgets(SEXP call, SEXP op, SEXP args, SEXP env)
 	   setting any attributes as an error later on would leave
 	   'obj' changed */
 	if (NAMED(object) > 1 || (NAMED(object) == 1 && nattrs))
-	    object = duplicate(object);
+	    object = shallow_duplicate(object);
 	PROTECT(object);
     }
 
