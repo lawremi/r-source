@@ -1741,7 +1741,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	case 1919:      /* vector     <- vector     */
 	case 2020:	/* expression <- expression */
 
-	    if( NAMED(y) ) y = duplicate(y);
+	    if( NAMED(y) ) y = lazy_duplicate(y);
 	    SET_VECTOR_ELT(x, offset, y);
 	    break;
 
@@ -1773,7 +1773,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
     }
     else if (isPairList(x)) {
 	/* if (NAMED(y)) */
-	y = duplicate(y);
+	y = lazy_duplicate(y);
 	PROTECT(y);
 	if (nsubs == 1) {
 	    if (isNull(y)) {
@@ -1802,7 +1802,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    for (i = (ndims - 1); i > 0; i--)
 		offset = (offset + INTEGER(indx)[i]) * INTEGER(dims)[i - 1];
 	    offset += INTEGER(indx)[0];
-	    SETCAR(nthcdr(x, (int) offset), duplicate(y));
+	    SETCAR(nthcdr(x, (int) offset), y);
 	    /* FIXME: add name */
 	    UNPROTECT(1);
 	}
@@ -1878,17 +1878,16 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
     S4 = IS_S4_OBJECT(x);
 
     if (NAMED(x) == 2)
-	REPROTECT(x = duplicate(x), pxidx);
+	REPROTECT(x = shallow_duplicate(x), pxidx);
 
     /* If we aren't creating a new entry and NAMED>0
        we need to duplicate to prevent cycles.
        If we are creating a new entry we could duplicate
-       or increase NAMED. We duplicate if NAMED==1, but
-       not if NAMED==2 */
+       or increase NAMED. */
     if (NAMED(val) == 2)
 	maybe_duplicate=TRUE;
     else if (NAMED(val)==1)
-	REPROTECT(val = duplicate(val), pvalidx);
+	REPROTECT(val = lazy_duplicate(val), pvalidx);
     /* code to allow classes to extend ENVSXP */
     if(TYPEOF(x) == S4SXP) {
 	xS4 = x;
@@ -1900,7 +1899,7 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
     if ((isList(x) || isLanguage(x)) && !isNull(x)) {
 	/* Here we do need to duplicate */
 	if (maybe_duplicate)
-	    REPROTECT(val = duplicate(val), pvalidx);
+	    REPROTECT(val = lazy_duplicate(val), pvalidx);
 	if (TAG(x) == nlist) {
 	    if (val == R_NilValue) {
 		SET_ATTRIB(CDR(x), ATTRIB(x));
@@ -2003,7 +2002,7 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
 	    if (imatch >= 0) {
 		/* We are just replacing an element */
 		if (maybe_duplicate)
-		    REPROTECT(val = duplicate(val), pvalidx);
+                    REPROTECT(val = lazy_duplicate(val), pvalidx);
 		SET_VECTOR_ELT(x, imatch, val);
 	    }
 	    else {
