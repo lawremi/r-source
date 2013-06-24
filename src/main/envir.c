@@ -2616,7 +2616,7 @@ SEXP attribute_hidden do_eapply(SEXP call, SEXP op, SEXP args, SEXP rho)
 	INTEGER(ind)[0] = i+1;
 	SEXP tmp = eval(R_fcall, rho);
 	if (NAMED(tmp))
-	    tmp = duplicate(tmp);
+	    tmp = lazy_duplicate(tmp);
 	SET_VECTOR_ELT(ans, i, tmp);
     }
 
