@@ -1331,7 +1331,7 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 		if (have_rnames &&
 		    GetRowNames(dn) == R_NilValue &&
 		    GetRowNames(v) != R_NilValue)
-		    SetRowNames(dn, duplicate(GetRowNames(v)));
+		    SetRowNames(dn, lazy_duplicate(GetRowNames(v)));
 
 		/* rbind() does this only  if(have_?names) .. : */
 		/* but if tnam is non-null, have_cnames = TRUE: see above */
@@ -1349,7 +1349,7 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 
 		if (have_rnames && GetRowNames(dn) == R_NilValue
 		    && u != R_NilValue && length(u) == rows)
-		    SetRowNames(dn, duplicate(u));
+		    SetRowNames(dn, lazy_duplicate(u));
 
 		if (TAG(t) != R_NilValue)
 		    SET_STRING_ELT(nam, j++, PRINTNAME(TAG(t)));
@@ -1580,7 +1580,7 @@ static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 		if (have_cnames &&
 		    GetColNames(dn) == R_NilValue &&
 		    GetColNames(v) != R_NilValue)
-		    SetColNames(dn, duplicate(GetColNames(v)));
+		    SetColNames(dn, lazy_duplicate(GetColNames(v)));
 
 		/* cbind() doesn't test have_?names BEFORE tnam!=Nil..:*/
 		/* but if tnam is non-null, have_rnames = TRUE: see above */
@@ -1601,7 +1601,7 @@ static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 
 		if (have_cnames && GetColNames(dn) == R_NilValue
 		    && u != R_NilValue && length(u) == cols)
-		    SetColNames(dn, duplicate(u));
+		    SetColNames(dn, lazy_duplicate(u));
 
 		if (TAG(t) != R_NilValue)
 		    SET_STRING_ELT(nam, j++, PRINTNAME(TAG(t)));
