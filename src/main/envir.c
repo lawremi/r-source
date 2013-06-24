@@ -2331,7 +2331,7 @@ static void FrameValues(SEXP frame, int all, SEXP values, int *indx)
 		value = eval(value, R_GlobalEnv);
 		UNPROTECT(1);
 	    }
-	    SET_VECTOR_ELT(values, *indx, duplicate(value));
+	    SET_VECTOR_ELT(values, *indx, lazy_duplicate(value));
 	    (*indx)++;
 	}
 	frame = CDR(frame);
@@ -2420,7 +2420,7 @@ BuiltinValues(int all, int intern, SEXP values, int *indx)
 			vl = eval(vl, R_BaseEnv);
 			UNPROTECT(1);
 		    }
-		    SET_VECTOR_ELT(values, (*indx)++, duplicate(vl));
+		    SET_VECTOR_ELT(values, (*indx)++, lazy_duplicate(vl));
 		}
 	    }
 	    else {
@@ -2432,7 +2432,7 @@ BuiltinValues(int all, int intern, SEXP values, int *indx)
 			vl = eval(vl, R_BaseEnv);
 			UNPROTECT(1);
 		    }
-		    SET_VECTOR_ELT(values, (*indx)++, duplicate(vl));
+		    SET_VECTOR_ELT(values, (*indx)++, lazy_duplicate(vl));
 		}
 	    }
 	}
