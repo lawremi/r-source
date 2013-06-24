@@ -1895,7 +1895,7 @@ SEXP attribute_hidden do_mget(SEXP call, SEXP op, SEXP args, SEXP rho)
 			     ginherits, rho));
     }
 
-    setAttrib(ans, R_NamesSymbol, duplicate(x));
+    setAttrib(ans, R_NamesSymbol, lazy_duplicate(x));
     UNPROTECT(2);
     return(ans);
 }
