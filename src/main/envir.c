@@ -2113,7 +2113,7 @@ SEXP attribute_hidden do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
 		if (TAG(x) == R_NilValue)
 		    error(_("all elements of a list must be named"));
 	    PROTECT(s = allocSExp(ENVSXP));
-	    SET_FRAME(s, duplicate(CAR(args)));
+	    SET_FRAME(s, shallow_duplicate(CAR(args)));
 	} else if (isEnvironment(CAR(args))) {
 	    SEXP p, loadenv = CAR(args);
 
@@ -2124,14 +2124,14 @@ SEXP attribute_hidden do_attach(SEXP call, SEXP op, SEXP args, SEXP env)
 		for (i = 0; i < n; i++) {
 		    p = VECTOR_ELT(HASHTAB(loadenv), i);
 		    while (p != R_NilValue) {
-			defineVar(TAG(p), duplicate(CAR(p)), s);
+			defineVar(TAG(p), lazy_duplicate(CAR(p)), s);
 			p = CDR(p);
 		    }
 		}
 		/* FIXME: duplicate the hash table and assign here */
 	    } else {
 		for(p = FRAME(loadenv); p != R_NilValue; p = CDR(p))
-		    defineVar(TAG(p), duplicate(CAR(p)), s);
+                    defineVar(TAG(p), lazy_duplicate(CAR(p)), s);
 	    }
 	} else {
 	    error(_("'attach' only works for lists, data frames and environments"));
