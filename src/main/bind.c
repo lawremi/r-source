@@ -198,7 +198,7 @@ ListAnswer(SEXP x, int recurse, struct BindData *data, SEXP call)
 	}
 	else {
 	    for (i = 0; i < XLENGTH(x); i++)
-		LIST_ASSIGN(duplicate(VECTOR_ELT(x, i)));
+		LIST_ASSIGN(lazy_duplicate(VECTOR_ELT(x, i)));
 	}
 	break;
     case LISTSXP:
@@ -210,12 +210,12 @@ ListAnswer(SEXP x, int recurse, struct BindData *data, SEXP call)
 	}
 	else
 	    while (x != R_NilValue) {
-		LIST_ASSIGN(duplicate(CAR(x)));
+		LIST_ASSIGN(lazy_duplicate(CAR(x)));
 		x = CDR(x);
 	    }
 	break;
     default:
-	LIST_ASSIGN(duplicate(x));
+	LIST_ASSIGN(lazy_duplicate(x));
 	break;
     }
 }
@@ -1243,13 +1243,13 @@ static SEXP cbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 			idx = (!isMatrix(u)) ? rows : k;
 			for (i = 0; i < idx; i++)
 			    SET_VECTOR_ELT(result, n++,
-					   duplicate(VECTOR_ELT(u, i % k)));
+					   lazy_duplicate(VECTOR_ELT(u, i % k)));
 		    }
 		    UNPROTECT(1);
 		    break;
 		default:
 		    for (i = 0; i < rows; i++)
-			SET_VECTOR_ELT(result, n++, duplicate(u));
+			SET_VECTOR_ELT(result, n++, lazy_duplicate(u));
 		}
 	    }
 	}
@@ -1481,7 +1481,7 @@ static SEXP rbind(SEXP call, SEXP args, SEXPTYPE mode, SEXP rho,
 		for (i = 0; i < idx; i++)
 		    for (j = 0; j < cols; j++)
 		      SET_VECTOR_ELT(result, i + n + (j * rows),
-				     duplicate(VECTOR_ELT(u, (i + j * idx) % k)));
+				     lazy_duplicate(VECTOR_ELT(u, (i + j * idx) % k)));
 		n += idx;
 		UNPROTECT(1);
 	    }
