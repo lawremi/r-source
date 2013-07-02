@@ -144,6 +144,33 @@ OneIndex(SEXP x, SEXP s, R_xlen_t len, int partial, SEXP *newname,
     return indx;
 }
 
+SEXP attribute_hidden
+get1element(SEXP x, SEXP thesub, int i, int pok, int *offset, SEXP call) {
+  R_xlen_t _offset;
+  if(!isVectorList(x) && !isPairList(x)) {
+    if (i)
+      errorcall(call, _("recursive indexing failed at level %d"), i+1);
+    else
+      errorcall(call, _("attempt to select more than one element"));
+  }
+  _offset = get1index(thesub, getAttrib(x, R_NamesSymbol),
+                      xlength(x), pok, i, call);
+  if(_offset < 0 || _offset >= xlength(x))
+    errorcall(call, _("no such index at level %d"), i+1);
+  if(isPairList(x)) {
+#ifdef LONG_VECTOR_SUPPORT
+    if (_offset > R_SHORT_LEN_MAX)
+      errorcall(call, "invalid subscript for pairlist");
+#endif
+    x = CAR(nthcdr(x, (int) _offset));
+  } else {
+    x = VECTOR_ELT(x, _offset);
+  }
+  if (offset != NULL)
+    *offset = _offset;
+  return x;
+}
+
 /* used here and in subset.c and subassign.c */
 R_xlen_t attribute_hidden
 get1index(SEXP s, SEXP names, R_xlen_t len, int pok, int pos, SEXP call)
@@ -278,28 +305,9 @@ SEXP attribute_hidden
 vectorIndex(SEXP x, SEXP thesub, int start, int stop, int pok, SEXP call) 
 {
     int i;
-    R_xlen_t offset;
 
     for(i = start; i < stop; i++) {
-	if(!isVectorList(x) && !isPairList(x)) {
-	    if (i)
-		errorcall(call, _("recursive indexing failed at level %d\n"), i+1);
-	    else
-		errorcall(call, _("attempt to select more than one element"));
-	}
-	offset = get1index(thesub, getAttrib(x, R_NamesSymbol),
-		           xlength(x), pok, i, call);
-	if(offset < 0 || offset >= xlength(x))
-	    errorcall(call, _("no such index at level %d\n"), i+1);
-	if(isPairList(x)) {
-#ifdef LONG_VECTOR_SUPPORT
-	    if (offset > R_SHORT_LEN_MAX)
-		error("invalid subscript for pairlist");
-#endif
-	    x = CAR(nthcdr(x, (int) offset));
-	} else {
-	    x = VECTOR_ELT(x, offset);
-    	}
+      x = get1element(x, thesub, i, pok, NULL, call);
     }
     return x;
 }

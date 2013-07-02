@@ -1492,6 +1492,32 @@ static SEXP DeleteOneVectorListItem(SEXP x, R_xlen_t which)
     return x;
 }
 
+static SEXP recursive_shallow_duplicate(SEXP x, SEXP thesub, int pok, SEXP call)
+{
+    int i, max_named = NAMED(x), offset;
+    SEXP parent, root;
+    if (NAMED(x) == 2)
+        x = shallow_duplicate(x);
+    PROTECT(root = x);
+    for(i = 0; i < length(thesub) - 1; i++) {
+        parent = x;
+        x = get1element(parent, thesub, i, pok, &offset, call);
+        if (NAMED(x) > max_named) {
+            max_named = NAMED(x);
+        }
+        if (max_named == 2) {
+            x = shallow_duplicate(x);
+            if (isPairList(x)) {
+                SETCAR(nthcdr(parent, (int) offset), x);
+            } else {
+                SET_VECTOR_ELT(parent, offset, x);
+            }
+        }
+    }
+    UNPROTECT(1);
+    return root;
+}
+
 /* The [[<- operator; should be fast.
  *     ====
  * args[1] = object being subscripted
@@ -1572,6 +1598,8 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	thesub = CAR(subs);
 	len = length(thesub); /* depth of recursion, small */
 	if (len > 1) {
+            x = recursive_shallow_duplicate(x, thesub, TRUE, call);
+            SETCAR(args, x);
 	    xup = vectorIndex(x, thesub, 0, len-2, /*partial ok*/TRUE, call);
 	    /* OneIndex sets newname, but it will be overwritten before being used. */
 	    off = OneIndex(xup, thesub, xlength(xup), 0, &newname, len-2, R_NilValue);
