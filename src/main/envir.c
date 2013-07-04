@@ -1892,10 +1892,10 @@ SEXP attribute_hidden do_mget(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    if(gmode == (SEXPTYPE) (-1))
 		error(_("invalid '%s' argument"), "mode");
 	}
-	SET_VECTOR_ELT(ans, i,
-		       duplicate(gfind(translateChar(STRING_ELT(x, i % nvals)), env,
-			     gmode, VECTOR_ELT(ifnotfound, i % nifnfnd),
-			     ginherits, rho)));
+        SEXP ans_i = gfind(translateChar(STRING_ELT(x, i % nvals)), env,
+                           gmode, VECTOR_ELT(ifnotfound, i % nifnfnd),
+                           ginherits, rho);
+	SET_VECTOR_ELT(ans, i, lazy_duplicate(ans_i));
     }
 
     setAttrib(ans, R_NamesSymbol, lazy_duplicate(x));
