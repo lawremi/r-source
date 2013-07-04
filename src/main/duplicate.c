@@ -175,6 +175,28 @@ SEXP lazy_duplicate(SEXP s) {
     return s;
 }
 
+Rboolean should_duplicate_to_insert(SEXP s, SEXP child) {
+    if (NAMED(s) == 2 || s == child)
+        return TRUE;
+    if (ATTRIB(child) != R_NilValue) {
+        if (should_duplicate_to_insert(s, ATTRIB(child)))
+            return TRUE;
+    }
+    if (isPairList(child)) {
+        SEXP el = child;
+        while(el != R_NilValue) {
+            if (should_duplicate_to_insert(s, CAR(el)))
+                return TRUE;
+	    el = CDR(el);
+	}
+    } else if (isVectorList(child)) {
+        for(int i = 0 ; i < length(child); i++)
+	    if (should_duplicate_to_insert(s, VECTOR_ELT(child, i)))
+                return TRUE;
+    }
+    return FALSE;
+}
+
 static SEXP duplicate_child(SEXP s, Rboolean deeply) {
     if (deeply) {
         return duplicate1(s, TRUE);

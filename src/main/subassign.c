@@ -1381,16 +1381,17 @@ SEXP attribute_hidden do_subassign_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     PROTECT(args);
 
+    SubAssignArgs(args, &x, &subs, &y);
+    
     /* If there are multiple references to an object we must */
     /* duplicate it so that only the local version is mutated. */
     /* This will duplicate more often than necessary, but saves */
     /* over always duplicating. */
     /* Shouldn't x be protected?  It is (as args is)! */
 
-    if (NAMED(CAR(args)) == 2)
-	x = SETCAR(args, shallow_duplicate(CAR(args)));
-
-    SubAssignArgs(args, &x, &subs, &y);
+    if (should_duplicate_to_insert(x, y))
+	x = SETCAR(args, shallow_duplicate(x));
+    
     S4 = IS_S4_OBJECT(x);
     nsubs = length(subs);
 
@@ -1566,7 +1567,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* Ensure that the LHS is a local variable. */
     /* If it is not, then make a local copy. */
 
-    if (NAMED(x) == 2)
+    if (should_duplicate_to_insert(x, y))
 	SETCAR(args, x = shallow_duplicate(x));
 
     xtop = xup = x; /* x will be the element which is assigned to */
@@ -1905,7 +1906,7 @@ SEXP R_subassign3_dflt(SEXP call, SEXP x, SEXP nlist, SEXP val)
     PROTECT_WITH_INDEX(val, &pvalidx);
     S4 = IS_S4_OBJECT(x);
 
-    if (NAMED(x) == 2)
+    if (should_duplicate_to_insert(x, val))
 	REPROTECT(x = shallow_duplicate(x), pxidx);
 
     /* If we aren't creating a new entry and NAMED>0

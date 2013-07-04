@@ -1065,6 +1065,7 @@ int R_SetOptionWidth(int);
 void R_Suicide(const char *);
 void R_getProcTime(double *data);
 int R_isMissing(SEXP symbol, SEXP rho);
+Rboolean should_duplicate_to_insert(SEXP s, SEXP child);
 void sortVector(SEXP, Rboolean);
 void SrcrefPrompt(const char *, SEXP);
 void ssort(SEXP*,int);
