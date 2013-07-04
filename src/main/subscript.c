@@ -282,6 +282,7 @@ vectorIndex(SEXP x, SEXP thesub, int start, int stop, int pok, SEXP call,
     int i;
     R_xlen_t offset;
     SEXP cx;
+    int max_named = 0;
 
     /* sanity check */
     if (dup && NAMED(x) > 1)
@@ -305,15 +306,19 @@ vectorIndex(SEXP x, SEXP thesub, int start, int stop, int pok, SEXP call,
 #endif
 	    cx = nthcdr(x, (int) offset);
 	    x = CAR(cx);
-	    if (dup && NAMED(x) > 1) {
-		x = duplicate(x);
+	    if (NAMED(x) > max_named)
+                max_named = NAMED(x);
+	    if (dup && max_named > 1) {
+		x = shallow_duplicate(x);
 		nthcdr(x, (int) offset);
 	    }
 	} else {
 	    cx = x;
 	    x = VECTOR_ELT(x, offset);
-	    if (dup && NAMED(x) > 1) {
-		x = duplicate(x);
+	    if (NAMED(x) > max_named)
+                max_named = NAMED(x);
+	    if (dup && max_named > 1) {
+		x = shallow_duplicate(x);
 		SET_VECTOR_ELT(cx, offset, x);
 	    }
     	}
