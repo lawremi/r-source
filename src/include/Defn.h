@@ -790,7 +790,6 @@ extern0 Rboolean known_to_be_utf8 INI_as(FALSE);
 # define FrameClassFix		Rf_FrameClassFix
 # define framedepth		Rf_framedepth
 # define frameSubscript		Rf_frameSubscript
-# define get1element		Rf_get1element
 # define get1index		Rf_get1index
 # define GetOptionCutoff       	Rf_GetOptionCutoff
 # define getVar			Rf_getVar
@@ -981,7 +980,6 @@ void findcontext(int, SEXP, SEXP);
 SEXP findVar1(SEXP, SEXP, SEXPTYPE, int);
 void FrameClassFix(SEXP);
 SEXP frameSubscript(int, SEXP, SEXP);
-SEXP get1element(SEXP, SEXP, int, int, int*, SEXP);
 R_xlen_t get1index(SEXP, SEXP, R_xlen_t, int, int, SEXP);
 int GetOptionCutoff(void);
 SEXP getVar(SEXP, SEXP);
