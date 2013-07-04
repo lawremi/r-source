@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 3.1.0\n"
 "Report-Msgid-Bugs-To: bugs.r-project.org\n"
-"POT-Creation-Date: 2013-03-07 08:37\n"
+"POT-Creation-Date: 2013-06-29 17:49\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -245,6 +245,9 @@ msgstr ""
 msgid "Non-portable flags in variable '%s':"
 msgstr ""
 
+msgid "Variables overriding user/site settings:"
+msgstr ""
+
 msgid "package %s exists but was not installed under R >= 2.10.0 so xrefs cannot be checked"
 msgstr ""
 
@@ -324,6 +327,9 @@ msgid "Argument items with no description in Rd object '%s':"
 msgstr ""
 
 msgid "Auto-generated content requiring editing in Rd object '%s':"
+msgstr ""
+
+msgid "no Rd sections specified"
 msgstr ""
 
 msgid "Generics 'g' in 'env' %s where '%s' errors: %s\nMay need something like\n\n%s\nin NAMESPACE."
@@ -434,6 +440,9 @@ msgstr ""
 msgid "unable to create temp directory %s"
 msgstr ""
 
+msgid "Running"
+msgstr ""
+
 msgid "Vignette"
 msgstr ""
 
@@ -461,13 +470,19 @@ msgstr ""
 msgid "running 'make' failed"
 msgstr ""
 
+msgid "file '%s' not found"
+msgstr ""
+
+msgid "vignette filename '%s' does not match any of the '%s' filename patterns"
+msgstr ""
+
 msgid "In '%s' vignettes '%s' and '%s' have the same vignette name"
 msgstr ""
 
 msgid "argument 'vignette' must be of length 1"
 msgstr ""
 
-msgid "file '%s' not found"
+msgid "Vignette engine package not specified."
 msgstr ""
 
 msgid "Unsupported engine name"
@@ -582,6 +597,12 @@ msgid "ERROR: this R is version %s, required is R %s %s"
 msgstr ""
 
 msgid "loading failed"
+msgstr ""
+
+msgid "Expected %s, got %s in evaluating %s"
+msgstr ""
+
+msgid "Failed to get expected %s in evaluating %s"
 msgstr ""
 
 msgid "Changes require specified 'style'"
@@ -914,6 +935,9 @@ msgstr ""
 msgid "testing '%s' failed"
 msgstr ""
 
+msgid "%d of the package tests failed"
+msgstr ""
+
 msgid "Testing examples for package %s"
 msgstr ""
 
@@ -945,6 +969,9 @@ msgid "no parsed files found"
 msgstr ""
 
 msgid "FAILED"
+msgstr ""
+
+msgid "DIFFERED"
 msgstr ""
 
 msgid "running tests of random deviate generation -- fails occasionally"

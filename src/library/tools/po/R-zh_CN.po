@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.4.0\n"
 "Report-Msgid-Bugs-To: bugs.r-project.org\n"
-"POT-Creation-Date: 2013-03-07 08:37\n"
+"POT-Creation-Date: 2013-06-29 17:49\n"
 "PO-Revision-Date: 2005-02-04 08:37+0000\n"
 "Last-Translator: 陈斐 <feic@normipaiva.com>\n"
 "Language-Team: Chinese\n"
@@ -270,6 +270,9 @@ msgstr "不允许有限制的组件"
 msgid "Non-portable flags in variable '%s':"
 msgstr "变量'%s'里有不可便携的标志:"
 
+msgid "Variables overriding user/site settings:"
+msgstr ""
+
 msgid ""
 "package %s exists but was not installed under R >= 2.10.0 so xrefs cannot be "
 "checked"
@@ -358,6 +361,10 @@ msgstr "Rd对象'%s'里存在没有描述的参数："
 
 msgid "Auto-generated content requiring editing in Rd object '%s':"
 msgstr "在Rd对象'%s'里自动产生的内容需要修改："
+
+#, fuzzy
+msgid "no Rd sections specified"
+msgstr "没有设定'type'"
 
 msgid ""
 "Generics 'g' in 'env' %s where '%s' errors: %s\n"
@@ -477,6 +484,10 @@ msgstr "找到一个以上的"
 msgid "unable to create temp directory %s"
 msgstr "无法建立临时目录%s"
 
+#, fuzzy
+msgid "Running"
+msgstr "执行%s"
+
 msgid "Vignette"
 msgstr "简介："
 
@@ -512,14 +523,21 @@ msgstr ""
 msgid "running 'make' failed"
 msgstr "调用'make'失败"
 
+msgid "file '%s' not found"
+msgstr "找不到'%s'这个文件"
+
+msgid "vignette filename '%s' does not match any of the '%s' filename patterns"
+msgstr ""
+
 msgid "In '%s' vignettes '%s' and '%s' have the same vignette name"
 msgstr "'%s'简介里'%s'和'%s'的名字是一样的"
 
 msgid "argument 'vignette' must be of length 1"
 msgstr "参数'vignette'的长度必需为一"
 
-msgid "file '%s' not found"
-msgstr "找不到'%s'这个文件"
+#, fuzzy
+msgid "Vignette engine package not specified."
+msgstr "不需要标头从属:"
 
 msgid "Unsupported engine name"
 msgstr "不支持这样的引擎名"
@@ -643,6 +661,12 @@ msgstr "错误：R的版本是%s，需要的是版本为%s %s的R"
 
 msgid "loading failed"
 msgstr "载入失败"
+
+msgid "Expected %s, got %s in evaluating %s"
+msgstr ""
+
+msgid "Failed to get expected %s in evaluating %s"
+msgstr ""
 
 msgid "Changes require specified 'style'"
 msgstr "改动需要特别'style'"
@@ -1004,6 +1028,9 @@ msgstr "找到了%s,可能是从%s来的"
 msgid "testing '%s' failed"
 msgstr "试用'%s'失败了"
 
+msgid "%d of the package tests failed"
+msgstr ""
+
 msgid "Testing examples for package %s"
 msgstr "试验程序包%s的范例"
 
@@ -1036,6 +1063,9 @@ msgstr "没有找到句法分析过的文件"
 
 msgid "FAILED"
 msgstr "失败"
+
+msgid "DIFFERED"
+msgstr ""
 
 msgid "running tests of random deviate generation -- fails occasionally"
 msgstr "执行随机偏离检验--偶尔会失败"
@@ -1525,9 +1555,6 @@ msgstr[0] "不能用多个数据调用来产生对象%s"
 
 #~ msgid "Package which this enhances but not available for checking: %s"
 #~ msgstr "无法检查被加强功能的程辑包:%s"
-
-#~ msgid "Vignette dependencies not required:"
-#~ msgstr "不需要标头从属:"
 
 #~ msgid "Vignette dependencies not required: %s"
 #~ msgstr "不需要标头从属: %s"

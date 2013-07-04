@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R-3.0.0\n"
 "Report-Msgid-Bugs-To: bugs.r-project.org\n"
-"POT-Creation-Date: 2013-03-07 08:24\n"
+"POT-Creation-Date: 2013-06-29 17:49\n"
 "PO-Revision-Date: 2013-03-18 10:24+0100\n"
 "Last-Translator: Detlef Steuer <steuer@hsu-hh.de>\n"
 "Language-Team: R Core <r-core@r-project.org>\n"
@@ -282,6 +282,9 @@ msgstr "Komponenten mit Einschränkungen nicht erlaubt:"
 msgid "Non-portable flags in variable '%s':"
 msgstr "Nicht portierbare Flags in der Variablen '%s'"
 
+msgid "Variables overriding user/site settings:"
+msgstr ""
+
 msgid ""
 "package %s exists but was not installed under R >= 2.10.0 so xrefs cannot be "
 "checked"
@@ -380,6 +383,10 @@ msgstr "Argumente ohne Beschreibung im Rd Objekt '%s':"
 msgid "Auto-generated content requiring editing in Rd object '%s':"
 msgstr ""
 "Automatisch generierter Inhalt benötigt noch Nacharbeit in Rd Objekt '%s':"
+
+#, fuzzy
+msgid "no Rd sections specified"
+msgstr "kein 'type' angegeben"
 
 msgid ""
 "Generics 'g' in 'env' %s where '%s' errors: %s\n"
@@ -500,6 +507,10 @@ msgstr "mehr als eine gefunden"
 msgid "unable to create temp directory %s"
 msgstr "kann temporäres Verzeichnis %s nicht erzeugen"
 
+#, fuzzy
+msgid "Running"
+msgstr "Ausführen von %s"
+
 msgid "Vignette"
 msgstr "Vignette"
 
@@ -516,7 +527,8 @@ msgid ") with shared names ("
 msgstr ") mit gemeinsamen Namen ("
 
 msgid ") and therefore risking overwriting each others output files"
-msgstr ") und deshalb besteht Gefahr des gegenseitigen Überschreibens von Ausgaben"
+msgstr ""
+") und deshalb besteht Gefahr des gegenseitigen Überschreibens von Ausgaben"
 
 msgid ""
 "processing vignette '%s' failed with diagnostics:\n"
@@ -535,14 +547,21 @@ msgstr ""
 msgid "running 'make' failed"
 msgstr "Ausführen von 'make ' fehlgeschlagen"
 
+msgid "file '%s' not found"
+msgstr "Datei '%s' nicht gefunden"
+
+msgid "vignette filename '%s' does not match any of the '%s' filename patterns"
+msgstr ""
+
 msgid "In '%s' vignettes '%s' and '%s' have the same vignette name"
 msgstr "In '%s' Vignetten '%s' und '%s' haben denselben Vignettennamen"
 
 msgid "argument 'vignette' must be of length 1"
 msgstr "Argument 'vignette' muss Länge 1 haben"
 
-msgid "file '%s' not found"
-msgstr "Datei '%s' nicht gefunden"
+#, fuzzy
+msgid "Vignette engine package not specified."
+msgstr "nicht benötigte Vignettenabhängigkeiten "
 
 msgid "Unsupported engine name"
 msgstr "nicht unterstützter Engine Name"
@@ -667,6 +686,12 @@ msgstr "Fehler: Dies ist R Version %s, benötigt wird R %s %s"
 
 msgid "loading failed"
 msgstr "Laden fehlgeschlagen"
+
+msgid "Expected %s, got %s in evaluating %s"
+msgstr ""
+
+msgid "Failed to get expected %s in evaluating %s"
+msgstr ""
 
 msgid "Changes require specified 'style'"
 msgstr "Änderungen benötigen den angegebenen 'style'"
@@ -1041,6 +1066,9 @@ msgstr "%s gefunden, vielleicht aus %s"
 msgid "testing '%s' failed"
 msgstr "Test von '%s' fehlgeschlagen"
 
+msgid "%d of the package tests failed"
+msgstr ""
+
 msgid "Testing examples for package %s"
 msgstr "Teste die Beispiele für Paket %s"
 
@@ -1073,6 +1101,9 @@ msgstr "keine gparsten Dateien gefunden"
 
 msgid "FAILED"
 msgstr "fehlgeschlagen"
+
+msgid "DIFFERED"
+msgstr ""
 
 msgid "running tests of random deviate generation -- fails occasionally"
 msgstr ""
@@ -1616,9 +1647,6 @@ msgstr[1] "Objekt(e) %s werden durch mehr als einen Datenaufruf erzeugt"
 #~ msgstr ""
 #~ "Paket, welches dieses erweitert, aber nicht für Überprüfung bereit steht: "
 #~ "%s"
-
-#~ msgid "Vignette dependencies not required:"
-#~ msgstr "nicht benötigte Vignettenabhängigkeiten "
 
 #~ msgid "Vignette dependencies not required: %s"
 #~ msgstr "nicht benötigte Vignettenabhängigkeiten: %s"

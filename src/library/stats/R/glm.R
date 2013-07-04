@@ -48,7 +48,7 @@ glm <- function(formula, family = gaussian, data, weights,
                  "etastart", "mustart", "offset"), names(mf), 0L)
     mf <- mf[c(1L, m)]
     mf$drop.unused.levels <- TRUE
-    mf[[1L]] <- as.name("model.frame")
+    mf[[1L]] <- quote(stats::model.frame)
     mf <- eval(mf, parent.frame())
     if(identical(method, "model.frame")) return(mf)
 
@@ -240,7 +240,7 @@ glm.fit <-
             ngoodobs <- as.integer(nobs - sum(!good))
             ## call Fortran code via C wrapper
             fit <- .Call(C_Cdqrls, x[good, , drop = FALSE] * w, z * w,
-                         min(1e-7, control$epsilon/1000))
+                         min(1e-7, control$epsilon/1000), check=FALSE)
             if (any(!is.finite(fit$coefficients))) {
                 conv <- FALSE
                 warning(gettextf("non-finite coefficients at iteration %d", iter), domain = NA)
@@ -848,7 +848,7 @@ model.frame.glm <- function (formula, ...)
     if (length(nargs) || is.null(formula$model)) {
 	fcall <- formula$call
 	fcall$method <- "model.frame"
-	fcall[[1L]] <- as.name("glm")
+	fcall[[1L]] <- quote(stats::glm)
         fcall[names(nargs)] <- nargs
 #	env <- environment(fcall$formula)  # always NULL
         env <- environment(formula$terms)

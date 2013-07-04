@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 3.0.0\n"
 "Report-Msgid-Bugs-To: bugs.r-project.org\n"
-"POT-Creation-Date: 2013-03-05 06:50\n"
+"POT-Creation-Date: 2013-06-29 17:49\n"
 "PO-Revision-Date: 2013-03-18 10:11+0100\n"
 "Last-Translator: Detlef Steuer <steuer@hsu-hh.de>\n"
 "Language-Team: R Core <r-core@r-project.org>\n"
@@ -70,8 +70,8 @@ msgstr ""
 msgid "Warning: unknown option %s"
 msgstr "Warnung: unbekannte Option %s"
 
-msgid "Created PDF document %s"
-msgstr "Erzeugtes PDF Dokument %s"
+msgid "Output file:"
+msgstr ""
 
 msgid "Compacting PDF document"
 msgstr "Komprimieren PDF Dokument"
@@ -965,6 +965,9 @@ msgstr "nicht unterstützter Eintragstyp"
 msgid "file '%s' not found"
 msgstr "File '%s' nicht gefunden"
 
+msgid "file '%s' did not have execute permissions: corrected"
+msgstr ""
+
 msgid "file size is limited to 8GB"
 msgstr "Dateigröße limitiert auf 8GB"
 
@@ -978,7 +981,8 @@ msgstr ""
 msgid "vignette %s not found"
 msgstr "Vignette %s nicht gefunden"
 
-msgid "vignette %s has no PDF"
+#, fuzzy
+msgid "vignette %s has no PDF/HTML"
 msgstr "Vignette %s enthält kein PDF"
 
 msgid "select.list() cannot be used non-interactively"
@@ -1255,6 +1259,9 @@ msgid "package %s is in use and will not be installed"
 msgid_plural "packages %s are in use and will not be installed"
 msgstr[0] "Paket %s wird gerade benutzt und deshab nicht installiert"
 msgstr[1] "Pakete %s werden gerade bennutzt und deshalb nicht installiert"
+
+#~ msgid "Created PDF document %s"
+#~ msgstr "Erzeugtes PDF Dokument %s"
 
 #~ msgid "file path is too long"
 #~ msgstr "Pfad ist zu lang"

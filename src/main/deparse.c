@@ -408,7 +408,7 @@ SEXP attribute_hidden do_dump(SEXP call, SEXP op, SEXP args, SEXP rho)
 	SET_TAG(o, install(translateChar(STRING_ELT(names, j))));
 	SETCAR(o, findVar(TAG(o), source));
 	if (CAR(o) == R_UnboundValue)
-	    warning(_("object '%s' not found"), CHAR(PRINTNAME(TAG(o))));
+	    warning(_("object '%s' not found"), EncodeChar(PRINTNAME(TAG(o))));
 	else nout++;
     }
     o = objs;
@@ -856,13 +856,16 @@ static void deparse2buff(SEXP s, LocalParseData *d)
 	    if ((TYPEOF(SYMVALUE(op)) == BUILTINSXP) ||
 		(TYPEOF(SYMVALUE(op)) == SPECIALSXP) ||
 		(userbinop = isUserBinop(op))) {
+		s = CDR(s);
 		if (userbinop) {
-		    fop.kind = PP_BINARY2;    /* not quite right for spacing, but can't be unary */
-		    fop.precedence = PREC_PERCENT;
-		    fop.rightassoc = 0;
+		    if (isNull(getAttrib(s, R_NamesSymbol))) {  
+			fop.kind = PP_BINARY2;    /* not quite right for spacing, but can't be unary */
+			fop.precedence = PREC_PERCENT;
+			fop.rightassoc = 0;
+		    } else 
+			fop.kind = PP_FUNCALL;  /* if args are named, deparse as function call (PR#15350) */
 		} else 
 		    fop = PPINFO(SYMVALUE(op));
-		s = CDR(s);
 		if (fop.kind == PP_BINARY) {
 		    switch (length(s)) {
 		    case 1:
@@ -1343,6 +1346,9 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 		surround = TRUE;
 		print2buff("as.character(", d);
 	    }
+	} else if(TYPEOF(vector) == RAWSXP) {
+	    surround = TRUE;
+	    print2buff("as.raw(", d);
 	}
 	if(tlen > 1) print2buff("c(", d);
 	allNA = allNA && !(d->opts & S_COMPAT);
@@ -1366,6 +1372,8 @@ static void vector2buff(SEXP vector, LocalParseData *d)
 		/* versions of R < 2.7.0 cannot parse strings longer than 8192 chars */
 		if(strlen(ts) >= 8192) d->longstring = TRUE;
 		strp = EncodeElement(vector, i, quote, '.');
+	    } else if (TYPEOF(vector) == RAWSXP) {
+		strp = EncodeRaw(RAW(vector)[i], "0x");
 	    } else
 		strp = EncodeElement(vector, i, quote, '.');
 	    print2buff(strp, d);

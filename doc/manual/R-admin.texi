@@ -18,16 +18,15 @@
 @include R-defs.texi
 @include version.texi
 
-@ifinfo
-@ignore
-Permission is granted to process this file through TeX and print the
-results, provided the printed document carries a copying permission
-notice identical to this one except for the removal of this paragraph
-(this paragraph not being relevant to the printed manual).
+@copying
+This manual is for R, version @value{VERSION}.
 
-@end ignore
+@Rcopyright{2001}
 
-@end ifinfo
+@quotation
+@permission{}
+@end quotation
+@end copying
 
 @titlepage
 @title R Installation and Administration
@@ -35,12 +34,12 @@ notice identical to this one except for the removal of this paragraph
 @author R Core Team
 @page
 @vskip 0pt plus 1filll
-@permission{}
-
-@Rcopyright{2001}
-
-@value{ISBN-admin}
+@insertcopying
 @end titlepage
+
+@ifplaintext
+@insertcopying
+@end ifplaintext
 
 @c @ifnothtml
 @contents
@@ -53,14 +52,6 @@ notice identical to this one except for the removal of this paragraph
 This is a guide to installation and administration for R.
 
 The current version of this document is @value{VERSION}.
-
-@value{ISBN-admin}
-
-@Rcopyright{2001}
-
-@permission{}
-@c ---------- ^- read that
-
 @end ifnottex
 
 @menu
@@ -336,7 +327,8 @@ make check-all
 @end example
 
 @noindent
-see file @file{tests/README}.
+see file @file{tests/README} and @ref{Testing a Unix-alike Installation}
+for the possibilities of doing this in parallel.
 
 If the command @command{configure} and @command{make} commands execute
 successfully, a shell-script front-end called @file{R} will be created
@@ -393,7 +385,7 @@ has the version for the latest release of @R{}).
 By default @HTML{} help pages are created when needed rather than being
 built at install time.
 
-If you need to disable the server and want HTML help, there is the
+If you need to disable the server and want @HTML{} help, there is the
 option to build @HTML{} pages when packages are installed
 (including those installed with @R{}).  This is enabled by the
 @command{configure} option @option{--enable-prebuilt-html}.  Whether
@@ -478,15 +470,15 @@ fonts.  We have provided four alternatives:
 and Courier.  This works well both for on-screen viewing and for
 printing.  One disadvantage is that the Usage and Examples sections may
 come out rather wide: this can be overcome by using @emph{in addition}
-either of the options @code{inconsolata} (which is part of the current
-default, on a Unix-alike only if found by @command{configure}) or
-@code{beramono}, which replace the Courier monospaced font by
-Inconsolata or Bera Sans mono respectively.  (You will need the
-appropriate @LaTeX{} package @pkg{inconsolata} or @pkg{bera}
-installed.@footnote{Many Debian/Ubuntu systems use a rather old version
-of TeXLive and so need Debian package @samp{texlive-fonts-extra}
-installed.  Fedora prior to 18 used an even older version of TeXLive:
-the best option is to update to TeXLive 2012, from the sources or see
+either of the options @code{inconsolata}, on a Unix-alike only if found by
+@command{configure}) or @code{beramono}, which replace the Courier
+monospaced font by Inconsolata or Bera Sans mono respectively.  (You
+will need the appropriate @LaTeX{} package @pkg{inconsolata} or
+@pkg{bera} installed.@footnote{Some Debian/Ubuntu systems use a rather
+old version of TeXLive and so need Debian package
+@samp{texlive-fonts-extra} installed.  Fedora prior to 18 used an even
+older version of TeXLive: the best option is to update to TeXLive 2012
+or later, from the sources or see
 @uref{http://fedoraproject.org/wiki/Features/TeXLive}.})
 
 Note that in most @LaTeX{} installations this will not actually use the
@@ -521,13 +513,13 @@ The default can be overridden by setting the environment variable
 @enindex R_RD4PDF
 @env{R_RD4PDF}.  (On Unix-alikes, this will be picked up at install time
 and stored in @file{etc/Renviron}, but can still be overridden when the
-manuals are built.)  The usual @footnote{on a Unix-alike,
-@samp{incosolata} is omitted if not found by @command{configure}.}
-default value for @env{R_RD4PDF} is @samp{times,inconsolata,hyper}: omit
-@samp{hyper} if you do not want hyperlinks (e.g.@: for printing the
-manual) or do not have @LaTeX{} package @pkg{hyperref}, and omit
-@samp{inconsolata} if you do not have @LaTeX{} package @pkg{inconsolata}
-installed.
+manuals are built, using @command{make -e}.)  The usual @footnote{on a
+Unix-alike, @samp{incosolata} is omitted if not found by
+@command{configure}.}  default value for @env{R_RD4PDF} is
+@samp{times,inconsolata,hyper}: omit @samp{hyper} if you do not want
+hyperlinks (e.g.@: for printing the manual) or do not have @LaTeX{}
+package @pkg{hyperref}, and omit @samp{inconsolata} if you do not have
+@LaTeX{} package @pkg{inconsolata} installed.
 
 @node Installation, Uninstallation, Making the manuals, Installing R under Unix-alikes
 @section Installation
@@ -901,6 +893,18 @@ library.  This can occasionally be useful when the operating environment
 has been changed, for example by OS updates or by substituting the
 @acronym{BLAS} (@pxref{Shared BLAS}).
 
+Parallel checking of packages may be possible: set the environment
+variable @env{TEST_MC_CORES} to the maximum number of processes to be
+run in parallel.  This affects both checking the package examples (part
+of @command{make check}) and package sources (part of @command{make
+check-devel} and @command{make check-recommended}).  It does require a
+@command{make} command which supports the @command{make -j @var{n}}
+option: most do but on Solaris you need to select GNU @code{make} or
+@code{dmake}.  Where parallel checking of package sources is done, a log
+file @file{@var{pngname}.log} is left in the @code{tests} directory for
+inspection.
+
+
 Alternatively, the installed @R{} can be run, preferably with
 @option{--vanilla}.  Then
 @enindex LC_COLLATE
@@ -1235,6 +1239,11 @@ If a test fails, there will almost always be a @file{.Rout.fail} file in
 the directory being checked (often @file{tests/Examples} or
 @file{tests}): examine the file to help pinpoint the problem.
 
+Parallel checking of package sources (part of @command{make check-devel}
+and @command{make check-recommended}) is possible: see the environment
+variable @env{TEST_MC_CORES} to the maximum number of processes to be
+run in parallel.
+
 
 @node Building the manuals, Building the Inno Setup installer, Checking the build, Building from source
 @subsection Building the manuals
@@ -1470,9 +1479,10 @@ Windows' CRLF line endings.
 The front page of a @acronym{CRAN} site has a link `Download R for OS
 X'. Click on that, then download the file @file{R-@value{VERSIONno}.pkg}
 and install it.  This runs on OS X 10.6 and later (Snow Leopard, Lion,
-Mountain Lion, @dots{}); it is a 64-bit (@cputype{x86_64}) build which
-should run on all Macs from mid-2008 on.  For older Intel Macs and some
-older versions of the OS you can install @R{} from the sources.
+Mountain Lion, Mavericks, @dots{}); it is a 64-bit (@cputype{x86_64})
+build which should run on all Macs from mid-2008 on.  For older Intel
+Macs and some older versions of the OS you can install @R{} from the
+sources.
 
 To install, just double-click on the icon of the file you downloaded.
 At the `Installation Type' stage, note the option to `Customize'.  This
@@ -1485,7 +1495,7 @@ the installation, please check the Installer log by clicking on the
 ``Window'' menu and item ``Installer Log''. The full output (select
 ``Show All Log'') is useful for tracking down problems.
 
-On Mountain Lion with `GateKeeper' active you may need to
+On Mountain Lion and later with `GateKeeper' active you will need to
 right/control-click on any unsigned packages and select @samp{Open}:
 recent @acronym{CRAN} packages are signed.
 
@@ -1515,7 +1525,7 @@ You can run command-line @R{} from a Terminal like any other Unix-alike:
 see the next chapter of this manual.  There are some small differences
 which may surprise users of @R{} on other platforms, notably the default
 personal library directory (under @file{~/Library/R},
-e.g. @file{~/Library/R/3.0/library}), and that warnings, messages and
+e.g. @file{~/Library/R/3.1/library}), and that warnings, messages and
 other output to @file{stderr} are highlighted in bold.
 
 
@@ -1566,13 +1576,13 @@ The installer will remove any previous version of the @R{} framework
 which it finds installed.  This can be avoided by using @command{pkgutil
 --forget} (see the previous section).  However, note that different
 versions are installed under
-@file{/Library/Frameworks/R.framework/Versions} as @file{2.15},
-@file{3.0} and so on, so it is not possible to have different
+@file{/Library/Frameworks/R.framework/Versions} as @file{3.0},
+@file{3.1} and so on, so it is not possible to have different
 @samp{3.x.y} versions installed for the same @samp{x}.
 
 A version of @R{} can be run directly from the command-line as e.g.@:
 @example
-/Library/Frameworks/R.framework/Versions/3.0/Resources/bin/R
+/Library/Frameworks/R.framework/Versions/3.1/Resources/bin/R
 @end example
 
 @noindent
@@ -1843,7 +1853,7 @@ containing either or both architectures.
 
 A few of the binary packages need other software to be installed on your
 system: see for example
-@uref{http://CRAN.R-project.org/@/bin/@/windows/@/contrib/@/3.0/@/@@ReadMe}.
+@uref{http://CRAN.R-project.org/@/bin/@/windows/@/contrib/@/3.1/@/@@ReadMe}.
 For 64-bit builds, packages using Gtk+ (@CRANpkg{Cairo},
 @CRANpkg{RGtk2}, @CRANpkg{cairoDevice} and those that depend on them)
 need the @file{bin} directory of a bundled distribution from
@@ -1922,13 +1932,12 @@ Line Tools' for @command{Xcode} and compilers which match those used to
 build @R{}: see @ref{OS X}.
 
 Package @CRANpkg{rJava} and those which depend on it need a Java runtime
-installed: for Mountain Lion see @ref{Mountain Lion}.  Several packages
-need X11 installed, including those using Tk: for Mountain Lion see
-@ref{Mountain Lion}.
+installed and several packages need X11 installed, including those using
+Tk.  For Mountain Lion and Mavericks see @ref{OS X} and @ref{Java (OS X)}.
 
 Tcl/Tk extensions @code{BWidget} and @code{Tktable} are part of the
-Tcl/Tk contained in the @R{} installer for 3.0.0 and later.  These are
-required by a number of @acronym{CRAN} and Bioconductor packages.
+Tcl/Tk contained in the @R{} installer.  These are required by a number
+of @acronym{CRAN} and Bioconductor packages.
 
 A few of the binary packages need other software to be installed on your
 system.  In particular packages using Gtk+ (@CRANpkg{RGtk2},
@@ -1957,7 +1966,7 @@ CXXFLAGS="-mtune=native -g -O2 -Wall -pedantic -Wconversion"
 @end example
 
 @noindent
-(this is expected to become necessary once Xcode 4.7 is released) and
+(this is expected to become necessary once Xcode 5 is released) and
 for another version of @command{gfortran-4.2} we needed
 @example
 FLIBS=-lgfortran
@@ -2561,7 +2570,7 @@ is the current working directory (in the build directory tree on a
 Unix-alike if that is separate from the sources).
 
 @file{Rmath.h} contains @samp{R_VERSION_STRING}, which is a character
-string containing the current @R{} version, for example @code{"3.0.0"}.
+string containing the current @R{} version, for example @code{"3.1.0"}.
 
 There is full access to @R{}'s handling of @code{NaN}, @code{Inf} and
 @code{-Inf} via special versions of the macros and functions
@@ -2883,8 +2892,8 @@ vignettes is sensitive to the version of the @LaTeX{} package
 @pkg{hyperref} and we recommend that the @TeX{} distribution used is
 kept up-to-date.  A number of @LaTeX{} packages are required (including
 @pkg{url.sty}, and @pkg{listings.sty}) and others such as @pkg{hyperref}
-and @pkg{inconsolata} are desirable (and without them you may need to
-change @R{}'s defaults: @pxref{Making the manuals}).
+and @pkg{inconsolata} are desirable (and without them you may need to change
+@R{}'s defaults: @pxref{Making the manuals}).
 
 
 If you want to build from the R Subversion repository you need both
@@ -3048,7 +3057,7 @@ a sub-architecture-specific version).  A typical setting for
 @cputype{x86_64} Linux is
 
 @example
-JAVA_HOME=/usr/lib/jvm/java-1.7.0-openjdk-1.7.0.9.x86_64/jre
+JAVA_HOME=/usr/lib/jvm/java-1.7.0-openjdk-1.7.0.19.x86_64/jre
 R_JAVA_LD_LIBRARY_PATH=$@{JAVA_HOME@}/lib/amd64/server
 @end example
 
@@ -3057,42 +3066,17 @@ installed, and so may need updating if the Java installation is updated.
 This can be done by running @code{R CMD javareconf} which updates
 settings in both @file{etc/Makeconf} and
 @file{@var{R_HOME}/etc/ldpaths}. See @code{R CMD javareconf --help} for
-details.  Alternatively a less specific version of @env{JAVA_HOME} can
-be supplied at configuration: in the example above this would be
+details.
+
+Another way of overriding those settings is to set the environment variable
+@enindex R_JAVA_LD_LIBRARY_PATH
+@env{R_JAVA_LD_LIBRARY_PATH} (before @R{} is started, hence not in
+@file{~/.Renviron}), which suffices to run already-installed
+Java-using packages.  For example
 
 @example
-JAVA_HOME=/usr/lib/jvm/java-1.7.0/jre
+R_JAVA_LD_LIBRARY_PATH=/usr/lib/jvm/java-1.7.0/jre/lib/amd64/server
 @end example
-
-Another way of overriding those setting is to set
-@enindex R_JAVA_LD_LIBRARY_PATH
-@env{R_JAVA_LD_LIBRARY_PATH} (e.g.@: in @file{~/.Renviron}), or use
-@file{/etc/ld.so.conf} to specify the Java runtime library paths to
-the system. Other settings are recorded in @file{etc/Makeconf} (or a
-sub-architecture-specific version), e.g.
-
-@example
-JAVA = /usr/bin/java
-JAVAC = /usr/bin/javac
-JAVA_HOME = /usr/java/jdk1.7.0_17/jre
-JAVA_LD_LIBRARY_PATH = $(JAVA_HOME)/lib/amd64/server
-JAVA_LIBS = -L$(JAVA_HOME)/lib/amd64/server -ljvm
-@end example
-
-@noindent
-where @samp{JAVA_LIBS} contains flags necessary to link JNI programs.
-Some of the above variables can be queried using @code{R CMD config}.
-
-@enindex R_JAVA_LD_LIBRARY_PATH
-Beware that on most OSes@footnote{on e.g.@: Linux and Solaris is
-prepended to the library path; as from @R{}@tie{}3.0.0 it is effectively
-appended on OS X.} setting @env{R_JAVA_LD_LIBRARY_PATH} changes the
-library path when @R{} and all its packages are loaded, not just for the
-Java libraries and JVM.  This can cause problems with conflicts between
-libraries supplied for use with Java and system libraries, and
-@env{JAVA_LD_LIBRARY_PATH} may need to be adjusted.  Where the OS
-supports it, it is better to set a run-time path (e.g.@: by @option{-R}
-or @option{-rpath}) as part of @env{JAVA_LIBS}.
 
 
 @node Linear algebra,  , Useful libraries and programs, Essential and useful other programs under a Unix-alike
@@ -3493,9 +3477,9 @@ special values such as INF or NaN values. Using these special values may
 cause LAPACK to return unexpected results or become unstable.
 @end quotation
 
-As from @R{} 3.0.0 we rely on limited support in LAPACK for matrices
-with @math{2^{31}} or more elements: it is quite possible that an
-external LAPACK will not have that support.
+We rely on limited support in LAPACK for matrices with @math{2^{31}} or
+more elements: it is quite possible that an external LAPACK will not
+have that support.
 
 If you have a pure FORTRAN 77 compiler which cannot compile LAPACK it
 may be possible to use CLAPACK from
@@ -3690,9 +3674,9 @@ produce the default.)
 @subsection Setting the browsers
 
 @enindex R_BROWSER
-Another precious variable is @env{R_BROWSER}, the default HTML browser, which
-should take a value of an executable in the user's path or specify
-a full path.
+Another precious variable is @env{R_BROWSER}, the default @HTML{}
+browser, which should take a value of an executable in the user's path
+or specify a full path.
 
 @enindex R_PDFVIEWER
 Its counterpart for PDF files is  @env{R_PDFVIEWER}.
@@ -4040,7 +4024,7 @@ scaled-down desktop screen).
 More complicated problems can occur in non-Western-European locales, so
 if you are using one, the first thing to check is that things work in
 the @code{C} locale.  The likely issues are a failure to find any fonts
-or glyphs being rendered incorrectly (often as a pair of ASCII
+or glyphs being rendered incorrectly (often as a pair of @acronym{ASCII}
 characters).  X11 works by being asked for a font specification and
 coming up with its idea of a close match.  For text (as distinct from
 the symbols used by plotmath), the specification is the first element of
@@ -4142,7 +4126,7 @@ LDFLAGS="-L/usr/local/lib64 -L/usr/local/lib"
 @noindent
 is appropriate since most (but not all) software installs its 64-bit
 libraries in @file{/usr/local/lib64}.  To build a 32-bit version of @R{}
-on @cputype{x86_64} with Fedora 16 we used
+on @cputype{x86_64} with Fedora 18 we used
 
 @example
 CC="gcc -m32"
@@ -4195,7 +4179,7 @@ the additional flags being needed to resolve problems linking against
 @subsection Clang
 
 @R{} has been built with Linux @cputype{ix86} and @cputype{x86_64} C and
-C++ compilers (@uref{http://clang.llvm.org}, versions 3.0 and 3.2)
+C++ compilers (@uref{http://clang.llvm.org}, versions 3.0, 3.2 and 3.3)
 based on the Clang front-ends, invoked by @code{CC=clang CXX=clang++},
 together with @command{gfortran}.  These take very similar options to
 the corresponding GCC compilers.
@@ -4292,7 +4276,7 @@ with @option{--without-readline}).
 You may also need to install an X sub-system (or you will need to
 configure with @option{--without-x}): X is part of the standard OS X
 distribution in versions prior to Mountain Lion, but not always
-installed.  For Mountain Lion, see
+installed.  For Mountain Lion and later, see
 @uref{http://xquartz.macosforge.org/}: some people prefer to use XQuartz
 on earlier versions of OS X instead of the Apple version.
 
@@ -4333,8 +4317,9 @@ is built using
 @item @command{gcc}
 from the Xcode distribution.  This is a version of gcc 4.2.1 with an
 LLVM backend.  Note that Apple have announced that Xcode 4.6 will be the
-last `release' with this compiler (4.6.1 does contain it), and it is
-likely that @command{clang} will be used before @R{} 3.1.0 is released.
+last `release' with this compiler (4.6.2 does contain it but 5 is
+expected not to), and it is likely that @command{clang} will be used
+before @R{} 3.1.0 is released.
 
 @item @command{gfortran}
 from
@@ -4371,7 +4356,8 @@ The alternative, @command{clang}, has no OpenMP support.
 Pre-compiled versions of many of the @ref{Useful libraries and programs}
 are available from @uref{http://r.research.att.com/libs/}.  You will
 most likely want at least @code{jpeg}, @code{libpng} and @code{readline}
-(and perhaps @code{tiff}).
+(and perhaps @code{tiff}).  @code{pkg-config} is not provided by Apple
+and useful for many packages.
 
 @cindex BLAS library
 @cindex LAPACK library
@@ -4400,6 +4386,7 @@ was used.
 * Snow Leopard::                
 * Lion::                        
 * Mountain Lion::               
+* Mavericks::                   
 * Tcl/Tk headers and libraries::  
 * Java (OS X)::                 
 * Frameworks::                  
@@ -4425,14 +4412,15 @@ last public free version for Snow Leopard) will work.
 No tweaks are known to be needed on Lion.  See the notes on Mountain
 Lion if XQuartz is in use.
 
-@node Mountain Lion, Tcl/Tk headers and libraries, Lion, OS X
+@node Mountain Lion, Mavericks, Lion, OS X
 @subsection Mountain Lion
 
-The X11 system used with Mountain Lion will be XQuartz.  To build the
-graphics devices depending on cairographics the XQuartz path for
-@command{pkg-config} files needs to be known to @command{pkg-config}
-when @command{configure} is run: this usually means adding it to the
-@env{PKG_CONFIG_PATH} environment variable, e.g.
+The X11 system used with Mountain Lion is XQuartz (see above).
+
+To build the graphics devices depending on cairographics the XQuartz
+path for @command{pkg-config} files needs to be known to
+@command{pkg-config} when @command{configure} is run: this usually means
+adding it to the @env{PKG_CONFIG_PATH} environment variable, e.g.
 
 @example
 export PKG_CONFIG_PATH= \
@@ -4442,7 +4430,24 @@ export PKG_CONFIG_PATH= \
 For some pre-compiled software, for example the GTK framework,
 @file{/opt/X11/include} may need to be added to the include paths.
 
-@node Tcl/Tk headers and libraries, Java (OS X), Mountain Lion, OS X
+@node Mavericks, Tcl/Tk headers and libraries, Mountain Lion, OS X
+@subsection Mavericks
+
+Mavericks is associated with Xcode 5, and is said to download software
+components as needed without installing all of Xcode.
+
+It is likely that @command{clang} will be the preferred C compiler,
+using something like
+
+@example
+CC="clang"
+CXX="clang++"
+F77="gfortran-4.2 -arch x86_64"
+FC=$F77
+OBJC="clang"
+@end example
+
+@node Tcl/Tk headers and libraries, Java (OS X), Mavericks, OS X
 @subsection Tcl/Tk headers and libraries
 
 If you plan to use the @code{tcltk} package for @R{}, you need to
@@ -4478,11 +4483,11 @@ Configure @R{} with
 
 The situation with Java support on OS X is messy, with Apple essentially
 no longer supporting Java (and what it does support is Java 6, which has
-reached end-of-life).  Snow Leopard and Lion shipped with a Java runtime
-(JRE).
+reached end-of-life).  Snow Leopard and Lion shipped with a Java 6
+runtime (JRE).
 
-Mountain Lion does not come with an installed JRE, and an upgrade to
-Mountain Lion removes one if already installed.  It is intended to be
+Mountain Lion did not come with an installed JRE, and an upgrade to
+Mountain Lion removed one if already installed.  It is intended to be
 installed at first use. Check if a JRE is installed by running
 @command{java -version} in a @command{Terminal} window: if Java is not
 installed this should prompt you to install it.
@@ -4525,11 +4530,10 @@ JAVA_CPPFLAGS="-I/$@{JAVA_HOME@}/include -I/$@{JAVA_HOME@}/include/darwin"
 JAVA_LD_LIBRARY_PATH="$@{JAVA_HOME@}/jre/lib/server"
 JAVA_LIBS="-L/$@{JAVA_HOME@}/jre/lib/server -ljvm" 
 @end example
-in @file{config.site}.  As from @R{} 3.0.0 @env{JAVA_LD_LIBRARY_PATH} is
-used as part of @env{DYLD_FALLBACK_LIBRARY_PATH} and so is less likely
-to cause conflicts, but @file{$@{JAVA_HOME@}/jre/lib} is still best
-avoided as in some JDKs it contains libraries which conflict with system
-libraries.
+in @file{config.site}.  @env{JAVA_LD_LIBRARY_PATH} is used as part of
+@env{DYLD_FALLBACK_LIBRARY_PATH} and so is less likely to cause
+conflicts, but @file{$@{JAVA_HOME@}/jre/lib} is still best avoided as in
+some JDKs it contains libraries which conflict with system libraries.
 
 Note that it is necessary to set the environment variable @env{NOAWT}
 to @code{1} to install many of the Java-using packages.
@@ -4772,9 +4776,9 @@ places.  At the time of writing it fails in @file{tests/reg-BLAS.R}, and on
 some builds, including for @cputype{amd64}, it fails in
 @code{example(eigen)}.
 
-As from @R{} 3.0.0 parsing very complex expressions needs a lot of stack
-space when the Oracle compilers are used: several packages require the
-stack increased to say 20MB.
+Parsing very complex expressions needs a lot of stack space when the
+Oracle compilers are used: several packages require the stack increased
+to say 20MB.
 
 
 @menu
@@ -5044,9 +5048,9 @@ Then @R{} itself can be built by something like
 There are also FreeBSD packages for a small eclectic collection of
 @acronym{CRAN} packages.
 
-Beware that the lack of adequate support for non-ASCII characters in
-UTF-8 locales has many consequences in @R{}: for example names will not
-be recognized as alphabetic by @code{make.names}.
+Beware that the lack of adequate support for non-@acronym{ASCII}
+characters in UTF-8 locales has many consequences in @R{}: for example
+names will not be recognized as alphabetic by @code{make.names}.
 
 @node Cygwin, New platforms, FreeBSD, Platform notes
 @section Cygwin
@@ -5228,7 +5232,7 @@ For example for a 32-bit build, all on one line,
 
 @example
 PATH=c:\Rtools\bin;c:\Rtools\gcc-4.6.3\bin;c:\MiKTeX\miktex\bin;
-     c:\R\R-3.0\bin\i386;c:\windows;c:\windows\system32
+     c:\R\R-3.1\bin\i386;c:\windows;c:\windows\system32
 @end example
 
 @noindent
@@ -5271,7 +5275,9 @@ It is also possible to use the TeXLive distribution from
 Please read @ref{Making the manuals} about how to make @file{fullrefman.pdf}
 and set the environment variable @env{R_RD4PDF} suitably; ensure you
 have the required fonts installed or that @samp{MiKTeX} is set up to
-install @LaTeX{} on first use.
+install @LaTeX{} packages on first use.  (In any case ensure that the
+@pkg{inconsolata} package is installed---you can check with the MiKTeX
+Package Manager.)
 
 @node The Inno Setup installer, The command line tools, LaTeX, The Windows toolset
 @section The Inno Setup installer

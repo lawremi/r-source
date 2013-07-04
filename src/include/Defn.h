@@ -1079,7 +1079,7 @@ void unmarkPhase(void);
 #endif
 SEXP R_LookupMethod(SEXP, SEXP, SEXP, SEXP);
 int usemethod(const char *, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP*);
-SEXP vectorIndex(SEXP, SEXP, int, int, int, SEXP);
+SEXP vectorIndex(SEXP, SEXP, int, int, int, SEXP, Rboolean);
 
 #ifdef R_USE_SIGNALS
 void begincontext(RCNTXT*, int, SEXP, SEXP, SEXP, SEXP, SEXP);
@@ -1124,9 +1124,10 @@ typedef enum {
 } Rprt_adj;
 
 int	Rstrlen(SEXP, int);
-const char *EncodeRaw(Rbyte);
+const char *EncodeRaw(Rbyte, const char *);
 const char *EncodeString(SEXP, int, int, Rprt_adj);
 const char *EncodeReal2(double, int, int, int);
+const char *EncodeChar(SEXP);
 
 
 /* main/sort.c */

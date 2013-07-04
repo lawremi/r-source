@@ -819,7 +819,8 @@ get_exclude_patterns <- function()
         } else if (a == "--no-build-vignettes") {
             vignettes <- FALSE
         } else if (a == "--no-vignettes") { # pre-3.0.0 version
-            vignettes <- FALSE
+            stop("'--no-vignettes' is defunct:\n  use '--no-build-vignettes' instead",
+                 call. = FALSE, domain = NA)
         } else if (a == "--resave-data") {
             resave_data <- "best"
         } else if (a == "--no-resave-data") {
@@ -870,8 +871,8 @@ get_exclude_patterns <- function()
         ## This does not easily work if $pkg is a symbolic link.
         ## Hence, we now convert to absolute paths.'
         setwd(startdir)
-        res <- try(setwd(pkg), silent = TRUE)
-        if (inherits(res, "try-error")) {
+	res <- tryCatch(setwd(pkg), error = function(e)e)
+	if (inherits(res, "error")) {
             errorLog(Log, "cannot change to directory ", sQuote(pkg))
             do_exit(1L)
         }
@@ -979,7 +980,7 @@ get_exclude_patterns <- function()
         setwd(Tdir)
         ## Fix permissions for all files to be at least 644, and dirs 755
         ## Not restricted by umask.
-        if (!WINDOWS) .Call(dirchmod, pkgname)
+	if (!WINDOWS) .Call(dirchmod, pkgname, group.writable=FALSE)
         ## Add build stamp to the DESCRIPTION file.
         add_build_stamp_to_description_file(file.path(pkgname,
                                                       "DESCRIPTION"))

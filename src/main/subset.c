@@ -937,7 +937,7 @@ SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	int len = length(thesub);
 
 	if (len > 1)
-	    x = vectorIndex(x, thesub, 0, len-1, pok, call);
+	    x = vectorIndex(x, thesub, 0, len-1, pok, call, FALSE);
 	    
 	offset = get1index(thesub, getAttrib(x, R_NamesSymbol),
 			   xlength(x), pok, len > 1 ? len-1 : -1, call);
@@ -1144,7 +1144,7 @@ SEXP attribute_hidden R_subset3_dflt(SEXP x, SEXP input, SEXP call)
 	if (havematch == 1) { /* unique partial match */
 	    if(R_warn_partial_match_dollar) {
 		const char *st = "";
-		SEXP target = TAG(y);
+		SEXP target = TAG(xmatch);
 		switch (TYPEOF(target)) {
 		case SYMSXP:
 		    st = CHAR(PRINTNAME(target));

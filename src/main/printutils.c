@@ -142,10 +142,10 @@ const char *EncodeInteger(int x, int w)
 }
 
 attribute_hidden
-const char *EncodeRaw(Rbyte x)
+const char *EncodeRaw(Rbyte x, const char * prefix)
 {
     static char buff[10];
-    sprintf(buff, "%02x", x);
+    sprintf(buff, "%s%02x", prefix, x);
     return buff;
 }
 
@@ -693,7 +693,7 @@ const char *EncodeElement(SEXP x, int indx, int quote, char dec)
 	res = EncodeComplex(COMPLEX(x)[indx], w, d, e, wi, di, ei, dec);
 	break;
     case RAWSXP:
-	res = EncodeRaw(RAW(x)[indx]);
+	res = EncodeRaw(RAW(x)[indx], "");
 	break;
     default:
 	res = NULL; /* -Wall */
@@ -701,6 +701,15 @@ const char *EncodeElement(SEXP x, int indx, int quote, char dec)
     }
     return res;
 }
+
+/* EncodeChar is a simple wrapper for EncodeString
+   called by error messages to display CHARSXP values */
+//attribute_hidden
+const char *EncodeChar(SEXP x)
+{
+    return EncodeString(x, 0, 0, Rprt_adj_left);
+}
+
 
 void Rprintf(const char *format, ...)
 {

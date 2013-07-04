@@ -21,28 +21,19 @@
 @include R-defs.texi
 @include version.texi
 
-@ifnottex
-@macro RIcopyright{}
+@copying
+This manual is for R, version @value{VERSION}.
+
 Copyright @copyright{} 1990 W.@: N.@: Venables@*
 Copyright @copyright{} 1992 W.@: N.@: Venables & D.@: M.@: Smith@*
 Copyright @copyright{} 1997 R.@: Gentleman & R.@: Ihaka@*
 Copyright @copyright{} 1997, 1998 M.@: Maechler@*
-Copyright @copyright{} 1997-- R Core Team@*
 @Rcopyright{1999}
-@end macro
-@end ifnottex
 
-@iftex
-@macro RIcopyright{}
-@noindent
-Copyright @copyright{} 1990 W.@: N.@: Venables
-Copyright @copyright{} 1992 W.@: N.@: Venables & D.@: M.@: Smith
-Copyright @copyright{} 1997 R.@: Gentleman & R.@: Ihaka
-Copyright @copyright{} 1997, 1998 M.@: Maechler
-Copyright @copyright{} 1997-- R Core Team@*
-@Rcopyright{1999}
-@end macro
-@end iftex
+@quotation
+@permission{}
+@end quotation
+@end copying
 
 @c <FIXME>
 @c Apparently AUCTeX 11.06 has a problem with '@appendixsection' entries
@@ -62,18 +53,14 @@ Copyright @copyright{} 1997-- R Core Team@*
 @subtitle Version @value{VERSION}
 @author W. N. Venables, D. M. Smith
 @author and the R Core Team
-
 @page
 @vskip 0pt plus 1filll
-
-@flushleft
-@RIcopyright{}
-@end flushleft
-
-@permission{}
-
-@value{ISBN-intro}
+@insertcopying
 @end titlepage
+
+@ifplaintext
+@insertcopying
+@end ifplaintext
 
 @c @ifnothtml
 @contents
@@ -96,13 +83,6 @@ This manual provides information on data types, programming elements,
 statistical modelling and graphics.
 
 The current version of this document is @value{VERSION}.
-
-@value{ISBN-intro}
-
-@RIcopyright{}
-
-@permission{}
-
 @end ifnottex
 
 @menu
@@ -6894,7 +6874,11 @@ Print version information to standard output and exit successfully.
 @item --encoding=@var{enc}
 Specify the encoding to be assumed for input from the console or
 @code{stdin}.  This needs to be an encoding known to @code{iconv}: see
-its help page.  (@code{--encoding @var{enc}} is also accepted.)
+its help page.  (@code{--encoding @var{enc}} is also accepted.)  The
+input is re-encoded to the locale @R{} is running in and needs to be
+representable in the latter's encoding (so e.g.@ you cannot re-encode
+Greek text in a French locale unless that locale uses the UTF-8
+encoding).
 
 @item RHOME
 Print the path to the @R{} ``home directory'' to standard output and
@@ -7089,9 +7073,9 @@ shorthand for @code{Rd2conv -t txt}.
 @item Rd2pdf
 Convert Rd format to PDF.
 @item Stangle
-Extract S/R code from Sweave documentation
+Extract S/R code from Sweave or other vignette documentation
 @item Sweave
-Process Sweave documentation
+Process Sweave or other vignette documentation
 @item Rdiff
 Diff @R{} output ignoring headers etc
 @item config

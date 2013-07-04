@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 3.0.0\n"
 "Report-Msgid-Bugs-To: bugs.r-project.org\n"
-"POT-Creation-Date: 2013-03-07 08:37\n"
+"POT-Creation-Date: 2013-06-29 17:49\n"
 "PO-Revision-Date: 2013-03-10 19:40-0600\n"
 "Last-Translator: Chel Hee Lee <gnustats@gmail.com>\n"
 "Language-Team: R Development Translation Teams (Korean) <gnustats@korea.gnu."
@@ -291,6 +291,9 @@ msgstr ""
 msgid "Non-portable flags in variable '%s':"
 msgstr ""
 
+msgid "Variables overriding user/site settings:"
+msgstr ""
+
 msgid ""
 "package %s exists but was not installed under R >= 2.10.0 so xrefs cannot be "
 "checked"
@@ -388,6 +391,10 @@ msgstr "다음은 Rd 객체 '%s'에 아무런 설명이 없는 인자항목들�
 
 msgid "Auto-generated content requiring editing in Rd object '%s':"
 msgstr "다음은 Rd 객체 '%s'를 편집하는데 필요한 자동으로 생성된 컨텐츠입니다:"
+
+#, fuzzy
+msgid "no Rd sections specified"
+msgstr "'type'이 지정되지 않았습니다"
 
 msgid ""
 "Generics 'g' in 'env' %s where '%s' errors: %s\n"
@@ -504,6 +511,10 @@ msgstr ""
 msgid "unable to create temp directory %s"
 msgstr "임시디렉토리 %s를 생성하지 못했습니다"
 
+#, fuzzy
+msgid "Running"
+msgstr "%s를 실행중입니다"
+
 msgid "Vignette"
 msgstr ""
 
@@ -537,14 +548,21 @@ msgstr ""
 msgid "running 'make' failed"
 msgstr "'make'를 실행하는데 실패했습니다"
 
+msgid "file '%s' not found"
+msgstr "파일 '%s'를 찾을 수 없습니다"
+
+msgid "vignette filename '%s' does not match any of the '%s' filename patterns"
+msgstr ""
+
 msgid "In '%s' vignettes '%s' and '%s' have the same vignette name"
 msgstr ""
 
 msgid "argument 'vignette' must be of length 1"
 msgstr "인자 'vignette'는 반드시 길이가 1 이어야 합니다"
 
-msgid "file '%s' not found"
-msgstr "파일 '%s'를 찾을 수 없습니다"
+#, fuzzy
+msgid "Vignette engine package not specified."
+msgstr "에러: 지정된 패키지가 없습니다"
 
 msgid "Unsupported engine name"
 msgstr ""
@@ -667,6 +685,12 @@ msgstr "에러: 현재 버전의 R은 %s인데 필요한 것은 R %s %s입니다
 
 msgid "loading failed"
 msgstr "로딩에 실패했습니다"
+
+msgid "Expected %s, got %s in evaluating %s"
+msgstr ""
+
+msgid "Failed to get expected %s in evaluating %s"
+msgstr ""
 
 msgid "Changes require specified 'style'"
 msgstr ""
@@ -1023,6 +1047,9 @@ msgstr ""
 msgid "testing '%s' failed"
 msgstr "'%s'를 테스팅하는 것은 실패했습니다"
 
+msgid "%d of the package tests failed"
+msgstr ""
+
 msgid "Testing examples for package %s"
 msgstr "패키지 %s의 예제를 테스트합니다"
 
@@ -1055,6 +1082,9 @@ msgstr ""
 
 msgid "FAILED"
 msgstr "실패했습니다"
+
+msgid "DIFFERED"
+msgstr ""
 
 msgid "running tests of random deviate generation -- fails occasionally"
 msgstr ""

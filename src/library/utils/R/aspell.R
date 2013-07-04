@@ -586,9 +586,22 @@ function(dir,
 {
     dir <- tools::file_path_as_absolute(dir)
 
-    subdir <- file.path(dir, "inst", "doc")
-    files <- if(file_test("-d", subdir))
-        tools::list_files_with_type(subdir, "vignette")
+    ## <FIXME>
+    ## This should be enhance to also work for non-Sweave package
+    ## vignettes, which requires that the respective engines provide
+    ## text filters.
+    ## </FIXME>
+
+    subdir <- file.path(dir, "vignettes")
+    if(!file_test("-d", subdir)) {
+        subdir <- file.path(dir, "inst", "doc")
+        if(!file_test("-d", subdir))
+            subdir <- character()
+    }
+    files <- if(length(subdir))
+        list.files(subdir,
+                   pattern = tools::vignetteEngine("Sweave")$pattern,
+                   full.names = TRUE)
     else character()
 
     meta <- tools:::.get_package_metadata(dir, installed = FALSE)

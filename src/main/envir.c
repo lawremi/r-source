@@ -167,7 +167,6 @@ static SEXP getActiveValue(SEXP fun)
 #define HASHPRI(x)	     TRUELENGTH(x)
 #define HASHTABLEGROWTHRATE  1.2
 #define HASHMINSIZE	     29
-#define SET_HASHSIZE(x,v)    SETLENGTH(x,v)
 #define SET_HASHPRI(x,v)     SET_TRUELENGTH(x,v)
 
 #define IS_HASHED(x)	     (HASHTAB(x) != R_NilValue)
@@ -318,7 +317,6 @@ static SEXP R_NewHashTable(int size)
 
     /* Allocate hash table in the form of a vector */
     PROTECT(table = allocVector(VECSXP, size));
-    SET_HASHSIZE(table, size);
     SET_HASHPRI(table, 0);
     UNPROTECT(1);
     return(table);
@@ -369,8 +367,11 @@ static SEXP DeleteItem(SEXP symbol, SEXP lst)
 
 static void R_HashDelete(int hashcode, SEXP symbol, SEXP table)
 {
-    SET_VECTOR_ELT(table, hashcode % HASHSIZE(table),
-	DeleteItem(symbol, VECTOR_ELT(table, hashcode % HASHSIZE(table))));
+    SEXP list = DeleteItem(symbol,
+			   VECTOR_ELT(table, hashcode % HASHSIZE(table)));
+    if (list == R_NilValue)
+	SET_HASHPRI(table, HASHPRI(table) - 1);
+    SET_VECTOR_ELT(table, hashcode % HASHSIZE(table), list);
     return;
 }
 
@@ -1330,7 +1331,7 @@ SEXP findFun(SEXP symbol, SEXP rho)
 	}
 	rho = ENCLOS(rho);
     }
-    error(_("could not find function \"%s\""), CHAR(PRINTNAME(symbol)));
+    error(_("could not find function \"%s\""), EncodeChar(PRINTNAME(symbol)));
     /* NOT REACHED */
     return R_UnboundValue;
 }
@@ -1631,6 +1632,8 @@ static int RemoveVariable(SEXP name, int hashcode, SEXP env)
 	list = RemoveFromList(name, VECTOR_ELT(hashtab, idx), &found);
 	if (found) {
 	    if(env == R_GlobalEnv) R_DirtyImage = 1;
+	    if (list == R_NilValue)
+		SET_HASHPRI(hashtab, HASHPRI(hashtab) - 1);
 	    SET_VECTOR_ELT(hashtab, idx, list);
 #ifdef USE_GLOBAL_CACHE
 	    if (IS_GLOBAL_FRAME(env))
@@ -1694,7 +1697,7 @@ SEXP attribute_hidden do_remove(SEXP call, SEXP op, SEXP args, SEXP rho)
 	}
 	if (!done)
 	    warning(_("object '%s' not found"),
-		    CHAR(PRINTNAME(tsym)));
+		    EncodeChar(PRINTNAME(tsym)));
     }
     return R_NilValue;
 }
@@ -1776,7 +1779,7 @@ SEXP attribute_hidden do_get(SEXP call, SEXP op, SEXP args, SEXP rho)
 	if (rval == R_UnboundValue) {
 	    if (gmode == ANYSXP)
 		error(_("object '%s' not found"),
-		      CHAR(PRINTNAME(t1)));
+		      EncodeChar(PRINTNAME(t1)));
 	    else
 		error(_("object '%s' of mode '%s' was not found"),
 		      CHAR(PRINTNAME(t1)),
@@ -1890,9 +1893,9 @@ SEXP attribute_hidden do_mget(SEXP call, SEXP op, SEXP args, SEXP rho)
 		error(_("invalid '%s' argument"), "mode");
 	}
 	SET_VECTOR_ELT(ans, i,
-		       gfind(translateChar(STRING_ELT(x, i % nvals)), env,
+		       duplicate(gfind(translateChar(STRING_ELT(x, i % nvals)), env,
 			     gmode, VECTOR_ELT(ifnotfound, i % nifnfnd),
-			     ginherits, rho));
+			     ginherits, rho)));
     }
 
     setAttrib(ans, R_NamesSymbol, lazy_duplicate(x));
@@ -2886,7 +2889,7 @@ void R_LockBinding(SEXP sym, SEXP env)
     else {
 	SEXP binding = findVarLocInFrame(env, sym, NULL);
 	if (binding == R_NilValue)
-	    error(_("no binding for \"%s\""), CHAR(PRINTNAME(sym)));
+	    error(_("no binding for \"%s\""), EncodeChar(PRINTNAME(sym)));
 	LOCK_BINDING(binding);
     }
 }
@@ -2907,7 +2910,7 @@ void R_unLockBinding(SEXP sym, SEXP env)
     else {
 	SEXP binding = findVarLocInFrame(env, sym, NULL);
 	if (binding == R_NilValue)
-	    error(_("no binding for \"%s\""), CHAR(PRINTNAME(sym)));
+	    error(_("no binding for \"%s\""), EncodeChar(PRINTNAME(sym)));
 	UNLOCK_BINDING(binding);
     }
 }
@@ -2965,7 +2968,7 @@ Rboolean R_BindingIsLocked(SEXP sym, SEXP env)
     else {
 	SEXP binding = findVarLocInFrame(env, sym, NULL);
 	if (binding == R_NilValue)
-	    error(_("no binding for \"%s\""), CHAR(PRINTNAME(sym)));
+	    error(_("no binding for \"%s\""), EncodeChar(PRINTNAME(sym)));
 	return BINDING_IS_LOCKED(binding) != 0;
     }
 }
@@ -2986,7 +2989,7 @@ Rboolean R_BindingIsActive(SEXP sym, SEXP env)
     else {
 	SEXP binding = findVarLocInFrame(env, sym, NULL);
 	if (binding == R_NilValue)
-	    error(_("no binding for \"%s\""), CHAR(PRINTNAME(sym)));
+	    error(_("no binding for \"%s\""), EncodeChar(PRINTNAME(sym)));
 	return IS_ACTIVE_BINDING(binding) != 0;
     }
 }

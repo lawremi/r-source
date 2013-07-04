@@ -48,26 +48,26 @@ static SEXP GetObject(RCNTXT *cptr)
 
     tag = TAG(formals);
     if (tag != R_NilValue && tag != R_DotsSymbol) {
-	s = R_NilValue;
+	s = NULL;
 	/** exact matches **/
 	for (b = cptr->promargs ; b != R_NilValue ; b = CDR(b))
 	    if (TAG(b) != R_NilValue && pmatch(tag, TAG(b), 1)) {
-		if (s != R_NilValue)
+		if (s != NULL)
 		    error(_("formal argument \"%s\" matched by multiple actual arguments"), tag);
 		else
 		    s = CAR(b);
 	    }
 
-	if (s == R_NilValue)
+	if (s == NULL)
 	    /** partial matches **/
 	    for (b = cptr->promargs ; b != R_NilValue ; b = CDR(b))
 		if (TAG(b) != R_NilValue && pmatch(tag, TAG(b), 0)) {
-		    if ( s != R_NilValue)
+		    if ( s != NULL)
 			error(_("formal argument \"%s\" matched by multiple actual arguments"), tag);
 		    else
 			s = CAR(b);
 		}
-	if (s == R_NilValue)
+	if (s == NULL)
 	    /** first untagged argument **/
 	    for (b = cptr->promargs ; b != R_NilValue ; b = CDR(b))
 		if (TAG(b) == R_NilValue )
@@ -75,7 +75,7 @@ static SEXP GetObject(RCNTXT *cptr)
 		    s = CAR(b);
 		    break;
 		}
-	if (s == R_NilValue)
+	if (s == NULL)
 	    s = CAR(cptr->promargs);
 /*
 	    error("failed to match argument for dispatch");
@@ -712,7 +712,7 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     else {
 	if(strlen(CHAR(PRINTNAME(CAR(cptr->call)))) >= 512)
 	   error(_("call name too long in '%s'"),
-		 CHAR(PRINTNAME(CAR(cptr->call))));
+		 EncodeChar(PRINTNAME(CAR(cptr->call))));
 	snprintf(b, 512, "%s", CHAR(PRINTNAME(CAR(cptr->call))));
     }
 
@@ -804,6 +804,12 @@ SEXP attribute_hidden do_nextmethod(SEXP call, SEXP op, SEXP args, SEXP env)
     defineVar(R_dot_Group, group, m);
 
     SETCAR(newcall, method);
+
+    /* applyMethod expects that the parent of the caller is the caller
+       of the generic, so fixup by brute force. This should fix
+       PR#15267 --pd */
+    R_GlobalContext->sysparent = callenv;
+
     ans = applyMethod(newcall, nextfun, matchedarg, env, m);
     UNPROTECT(10);
     return(ans);

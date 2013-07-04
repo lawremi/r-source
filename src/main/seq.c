@@ -158,10 +158,10 @@ SEXP attribute_hidden do_colon(SEXP call, SEXP op, SEXP args, SEXP rho)
     s2 = CADR(args);
     n1 = length(s1);
     n2 = length(s2);
+    if (n1 == 0 || n2 == 0)
+	errorcall(call, _("argument of length 0"));
     if (n1 > 1)
 	warningcall(call, _("numerical expression has %d elements: only the first used"), (int) n1);
-    else if (n1 == 0 || n2 == 0)
-	errorcall(call, _("argument of length 0"));
     if (n2 > 1)
 	warningcall(call, _("numerical expression has %d elements: only the first used"), (int) n2);
     n1 = asReal(s1);
@@ -236,8 +236,9 @@ static SEXP rep2(SEXP s, SEXP ncopy)
     case EXPRSXP:
 	for (i = 0; i < nc; i++) {
 //	    if ((i+1) % ni == 0) R_CheckUserInterrupt();
+	    SEXP elt = duplicate(VECTOR_ELT(s, i));
 	    for (j = 0; j < INTEGER(t)[i]; j++)
-		SET_VECTOR_ELT(a, n++, VECTOR_ELT(s, i));
+		SET_VECTOR_ELT(a, n++, elt);
 	}
 	break;
     case RAWSXP:

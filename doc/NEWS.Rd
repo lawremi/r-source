@@ -48,8 +48,48 @@
       useful as \code{as.data.frame.table()}, now passes \code{sep} and
       \code{base} arguments to \code{provideDimnames()}.
 
-      \item The new \code{unirootS()} function is a "safe" version of
-      \code{uniroot()} auto-extending the search interval when needed.
+      \item \code{uniroot()} gets new optional arguments, notably
+      \code{extendInt}, allowing to auto-extend the search interval when
+      needed.
+
+      % advertize at all?
+      % \item New \code{.lm.fit()} for benchmark lovers but not Joe
+      % Average.
+
+      %% TODO: change in ../src/library/compiler/noweb/compiler.nw + ..../R/cmp.R
+      \item \code{switch(f, ...)} now warns when \code{f} is a factor,
+      as this typically happens accidentally where the useR meant to
+      pass a character string, but \code{f} is treated as integer (as
+      always documented).
+
+      \item The parser has been modified to use less memory.
+
+      \item Methods invoked by NextMethod had different dynamic parent
+      than the generic. This was causing trouble where S3 methods
+      invoked via lazy evaluation could lose track of their generic 
+      (\PR{15267}).
+
+} }
+
+  \subsection{INSTALLATION}{
+    \itemize{
+      \item There is some support for parallel testing of an
+      installation, by setting \env{TEST_MC_CORES} is set to an integer
+      greater than one to indicate the maximum number of cores to be
+      used in parallel. (It is worth specifying at least 8 cores if
+      available.)  Most of these require a \command{make} program (such
+      as GNU \command{make} and \command{dmake}) which supports the
+      \command{${MAKE} -j nproc} syntax.
+
+      Except on Windows: the tests of standard package examples in
+      \command{make check} are done in parallel using that number of
+      cores.  This also applies to running
+      \code{tools::testInstalledPackages()}.
+
+      The more time-consuming regression tests are done in parallel.
+
+      The package checks in \command{make check-devel} and \command{make
+      check-recommended} are done in parallel.
     }
   }
 
@@ -70,18 +110,37 @@
       in \file{.Rbuildignore}  and \file{vignettes/.install_extras}
       case-insensitively on all platforms (not just on Windows).
 
-      \item \command{R CMD check --as-cran} now implies \option{--timings}.
-      
       \item \code{checkFF()} (called by \command{R CMD check} by
       default) can optionally check foreign function calls for
       consistency with the registered type and argument count.  This is
       the default for \command{R CMD check --as-cran} or can be enabled
       by setting environment variable \env{_R_CHECK_FF_CALLS_} to
-      \samp{registration}.
+      \samp{registration} (but is in any case suppressed by
+      \option{--install=no}).   Because this checks calls in which
+      \code{.NAME} is an \R object and not just a literal character
+      string, some other problems are detected for such calls.
 
       Functions \code{suppressForeignCheck()} and \code{dontCheck()}
       have been added to allow package authors to suppress false
       positive reports.
+
+      \item \code{R CMD check --as-cran} warns about a false value of the
+      \file{DESCRIPTION} field \samp{BuildVignettes} for Open Source
+      packages, and ignores it (as an Open Source package needs to have
+      complete sources for its vignettes).
+
+      \item \code{R CMD check --no-rebuild-vignettes} is defunct:
+      \code{R CMD check --no-build-vignettes} has been preferred since
+      \R 3.0.0.
+
+      \item \code{R CMD build --no-vignettes} is defunct:
+      \code{R CMD build --no-build-vignettes} has been preferred since
+      \R 3.0.0.
+
+      \item \code{R CMD Sweave} and \code{R CMD Stangle} now
+      process both Sweave and non-Sweave vignettes.  The
+      \code{tools::buildVignette()} function has been added to do the
+      same tasks from within \R.
     }
   }
 
@@ -105,6 +164,9 @@
       \item The long-deprecated use of \code{\\synopsis} in the
       \samp{Usage} section of \file{.Rd} files has been removed: such
       sections are now ignored (with a warning).
+
+      \item \code{package.skeleton()}'s deprecated argument
+      \code{namespace} has been removed.
     }
   }
 
@@ -117,7 +179,7 @@
 
       \item On system where \code{mktime()} does not set \code{ERRNO}, the
       last second before the epoch could not be converted from \code{POSIXlt}
-      to \code{POSIXct}. (Reported by Bill Dunlap).
+      to \code{POSIXct}. (Reported by Bill Dunlap.)
 
       \item If \code{x} is a symbol, \code{is.vector(x, "name")} now returns
       \code{TRUE}, since \code{"name"} and \code{"symbol"} should be synonyms.
@@ -127,8 +189,12 @@
       hexadecimal constants (e.g. \code{0x1.1p0}), rather than returning
       unintended values for malformed constants. (\PR{15234})
 
-      \item \code{is.unsorted(NA)} is false as documented (rather than
+      \item \code{is.unsorted(NA)} returns false as documented (rather than
       \code{NA}).
+
+      \item Error messages involving non-syntactic names (e.g. as produced
+      by \code{`\\r`} when that object does not exist) now encode
+      the control characters.  (Reported by Hadley Wickham.)
     }
   }
 }
@@ -142,11 +208,37 @@
       \item The \code{example()} and \code{tools::Rd2ex()} functions now
       have parameters to allow them to ignore \verb{\dontrun} markup in
       examples.  (Suggested by Peter Solymos.)
-      
+
       \item The included version of PCRE has been updated to 8.33.
-      
+
       \item The included version of zlib has been updated to 1.2.8, a
       bug-fix release.
+
+      \item \code{str(x)} is considerably faster for very large lists,
+      or factors with 100,000 levels, the latter as in \PR{15337}.
+
+      \item \code{col2rgb()} now converts factors to character strings
+      not integer codes (suggested by Bryan Hanson).
+
+      \item \code{tail(warnings())} now works, via the new \code{`[`}
+      method.
+
+      \item There is now support for the LaTeX style file \file{zi4.sty}
+      which has in some distributions replaced \file{inconsolata.sty}
+      (which has been removed from the \pkg{inconsolata} LaTeX package
+      without any warning).
+
+      \item \code{unlist(x)} now typically returns all non-list
+      \code{x}s unchanged, not just the \dQuote{vector} ones.
+      Consequently, \code{format(lst)} now also works when the list
+      \code{lst} has non-vector elements.
+
+      \item The \code{tools::getVignetteInfo()} function has been added
+      to give information about installed vignettes.
+
+      \item New \code{assertCondition()} utility in \pkg{tools}, useful
+      for testing.
+
     }
   }
 
@@ -154,6 +246,8 @@
     \itemize{
       \item \command{R CMD check --as-cran} checks the line widths in
       usage and examples sections of the package Rd files.
+
+      \item \command{R CMD check --as-cran} now implies \option{--timings}.
 
       \item \command{R CMD check} looks for command \command{gfile} if a
       suitable \command{file} is not found.  (Although \command{file} is
@@ -165,6 +259,17 @@
       files if needed, with a warning.  This is useful on OSes and file
       systems which do not support execute permissions (notably, on
       Windows).
+
+      \item \code{checkFF()} (used by \command{R CMD check}) does a
+      better job of detecting calls from other packages, including not
+      reporting those where a function has been copied from another
+      namespace (e.g. as a default method).  It now reports calls where
+      \code{.NAME} is a symbol registered in another package.
+
+      \item On Unix-alike systems, \command{R CMD INSTALL} now installs packages
+      group writably whenever the library (\code{lib.loc}) is group
+      writable.  Hence, \code{update.packages()} works for other group
+      members (suggested originally and from a patch by Dirk Eddelbuettel).
     }
   }
 
@@ -174,7 +279,7 @@
       package is not installed.
     }
   }
-      
+
   \subsection{C-LEVEL FACILITIES}{
     \itemize{
       \item \file{Rdefines.h} has been tweaked so it can be included in
@@ -183,6 +288,17 @@
 
       Note that \file{Rdefines.h} is not kept up-to-date, and
       \file{Rinternals.h} is preferred for new code.
+    }
+  }
+
+  \subsection{DEPRECATED AND DEFUNCT}{
+    \itemize{
+      \item The unused \code{namespace} argument to
+      \code{package.skeleton()} is now formally deprecated and will be
+      removed in \R 3.1.0.
+
+      \item \code{plclust()} is deprecated: use the \code{plot()} method
+      for class \code{"hclust"} instead.
     }
   }
 
@@ -212,11 +328,68 @@
 
       \item \code{plot(hclust(), cex =)} respects \code{cex} again
       (and possibly others similarly).  (Reported by Peter Langfelder.)
-      
-      \item If multiple packages were checked by \command{R CMD check}, 
+
+      \item If multiple packages were checked by \command{R CMD check},
       and one was written for a different OS, it would set
       \command{--no-install} for all following packages as well as
-      itself.      
+      itself.
+
+      \item \code{qr.coef()} and related functions did not properly coerce
+      real vectors to complex when necessary.  (\PR{15332})
+
+      \item \code{ftable(a)} now fixes up empty \code{dimnames} such
+      that the result is printable.
+
+      \item \code{package.skeleton()} was not starting its search for
+      function objects in the correct place if \code{environment} was
+      supplied.  (Reported by Karl Forner.)
+
+      \item Parsing code was changing the length field of vectors and
+      confusing the memory manager.  (\PR{15345})
+
+      \item The Fortran routine \code{ZHER2K} in the reference BLAS
+      had a comment-out bug in two places.
+      This caused trouble with \code{eigen()} for Hermitian matrices.
+      (\PR{15345} and report from Robin Hankin)
+
+      \item \code{vignette()} and \code{browseVignettes()} did not
+      display non-Sweave vignettes properly.
+
+      \item Two warning/error messages have been corrected:
+      the (optional) warning produced by a partial name match
+      with a pairlist, the error message from a zero length argument to
+      the \code{:} operator.  (Found by Radford Neal; \PR{15358},
+      \PR{15356})
+
+      \item \code{svd()} returned \code{NULL} rather than omitting
+      components as documented.  (Found by Radford Neal; \PR{15360})
+
+      \item \code{mclapply()} and \code{mcparallel()} with
+      \code{silent=TRUE} could break a process that uses \code{stdout}
+      output unguarded against broken pipes (e.g., \code{zip} will fail
+      silently). To work around such issues, they now replace
+      \code{stdout} with a descriptor pointed to \file{/dev/null}
+      instead. For this purpose, internal \code{closeStdout} and
+      \code{closeStderr} functions have gained the \code{to.null} flag.
+
+      \item \code{log()}, \code{signif()} and \code{round()} now raise an
+      error if a single named argument is not named \code{x}.  (\PR{15361})
+
+      \item \code{deparse()} now deparses raw vectors in a form that
+      is syntactically correct. (\PR{15369})
+
+      \item The \code{jpeg} driver in Sweave created a JPEG file, but gave
+      it a \file{.png} extension. (\PR{15370})
+
+      \item Deparsing of infix operators with named arguments is
+      improved. (\PR{15350})
+
+      \item \code{mget()}, \code{seq.int()} and \code{numericDeriv()}
+      did not duplicate arguments properly. (\PR{15352}, \PR{15353},
+      \PR{15354})
+
+      \item \code{kmeans()} now always stops iterating in the QTran
+      stage. (\PR{15364}).
     }
   }
 }
@@ -353,7 +526,7 @@
       clusterings, thanks to Daniel Müllner. (\PR{15174})
 
       \item The return value when all workers failed from
-      \code{parallel::mclapply(mc.presechedule = TRUE)} was a list of
+      \code{parallel::mclapply(mc.preschedule = TRUE)} was a list of
       strings and not of error objects.  (Spotted by Karl Forner and
       Bernd Bischl.)
 

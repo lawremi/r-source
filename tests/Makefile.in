@@ -39,12 +39,6 @@ RDIFF = $(top_builddir)/bin/R CMD Rdiff
 RDCONV = LC_CTYPE=C $(top_builddir)/bin/R CMD Rdconv
 MK = $(MAKE)
 
-
-all-basic-tests = Examples Specific Reg Internet
-## remove 'Rd' for now
-all-devel-tests = Docs IsAs Random Demo Primitive Regexp Segfault \
-   Standalone Packages
-
 all check test-all-basics test-all-devel: Makefile $(srcdir)/Makefile.common
 
 
@@ -93,13 +87,14 @@ clean:
 	-@rm -rf anRpackage myTst* myLib
 	-@rm -f *.tar.gz
 	-@rm -f keepsource.tex test-system2 test-system.Rout
+	-@rm -f *.log *.tsin *.trin
 
 distclean: clean
 	-@for d in $(SUBDIRS); do \
 	  (cd $${d} && $(MAKE) $@); \
 	done
 	-@rm -f Makefile $(test-out) $(test-src-auto) .RData
-	-@rm -rf *.Rcheck Packages
+	-@rm -rf *.Rcheck RecPackages
 maintainer-clean: distclean
 
 R install install-strip uninstall TAGS info dvi:

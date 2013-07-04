@@ -17,16 +17,15 @@
 @include R-defs.texi
 @include version.texi
 
-@ifinfo
-@ignore
-Permission is granted to process this file through TeX and print the
-results, provided the printed document carries a copying permission
-notice identical to this one except for the removal of this paragraph
-(this paragraph not being relevant to the printed manual).
+@copying
+This manual is for R, version @value{VERSION}.
 
-@end ignore
+@Rcopyright{2000}
 
-@end ifinfo
+@quotation
+@permission{}
+@end quotation
+@end copying
 
 @titlepage
 @title R Data Import/Export
@@ -34,16 +33,16 @@ notice identical to this one except for the removal of this paragraph
 @author R Core Team
 @page
 @vskip 0pt plus 1filll
-@permission{}
-
-@Rcopyright{2000}
-
-@value{ISBN-data}
+@insertcopying
 @end titlepage
 
-@ifnothtml
+@ifplaintext
+@insertcopying
+@end ifplaintext
+
+@c @ifnothtml
 @contents
-@end ifnothtml
+@c @end ifnothtml
 
 @ifnottex
 @node Top, Acknowledgements, (dir), (dir)
@@ -52,14 +51,6 @@ notice identical to this one except for the removal of this paragraph
 This is a guide to importing and exporting data to and from R.
 
 The current version of this document is @value{VERSION}.
-
-@value{ISBN-data}
-
-@Rcopyright{2000}
-
-@permission{}
-@c ---------- ^- read that
-
 @end ifnottex
 
 @menu
@@ -215,9 +206,9 @@ discussed in @ref{Network interfaces}.
 @subsection Encodings
 @cindex Encodings
 
-Unless the file to be imported from is entirely in ASCII, it is usually
-necessary to know how it was encoded.  For text files, a good way to
-find out something about its structure is the @command{file}
+Unless the file to be imported from is entirely in @acronym{ASCII}, it
+is usually necessary to know how it was encoded.  For text files, a good
+way to find out something about its structure is the @command{file}
 command-line tool (for Windows, included in @code{Rtools}).  This
 reports something like
 
@@ -371,11 +362,12 @@ The second is the form of escape commonly used by spreadsheets.
 @item @strong{Encodings}
 @cindex Encodings
 
-Text files do not contain metadata on their encodings, so for non-ASCII
-data the file needs to be targetted to the application intended to read
-it.  All of these functions can write to a @emph{connection} which
-allows an encoding to be specified for the file, and @code{write.table}
-has a @code{fileEncoding} argument to make this easier.
+Text files do not contain metadata on their encodings, so for
+non-@acronym{ASCII} data the file needs to be targetted to the
+application intended to read it.  All of these functions can write to a
+@emph{connection} which allows an encoding to be specified for the file,
+and @code{write.table} has a @code{fileEncoding} argument to make this
+easier.
 
 The hard part is to know what file encoding to use.  For use on Windows,
 it is best to use what Windows calls `Unicode'@footnote{Even then,
@@ -429,7 +421,7 @@ standard for general data markup and exchange.  It is being used by
 different communities to describe geographical data such as maps,
 graphical displays, mathematics and so on.
 
-XML provides a way to specify the file's encoding, e.g.@:
+@acronym{XML} provides a way to specify the file's encoding, e.g.@:
 
 @example
 <?xml version="1.0" encoding="UTF-8"?>
@@ -485,9 +477,9 @@ Some of the issues to consider are:
 @enumerate
 @item @strong{Encoding}
 
-If the file contains non-ASCII character fields, ensure that it is read
-in the correct encoding.  This is mainly an issue for reading Latin-1
-files in a UTF-8 locale, which can be done by something like
+If the file contains non-@acronym{ASCII} character fields, ensure that
+it is read in the correct encoding.  This is mainly an issue for reading
+Latin-1 files in a UTF-8 locale, which can be done by something like
 
 @example
 read.table("file.dat", fileEncoding="latin1")

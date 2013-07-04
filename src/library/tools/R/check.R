@@ -659,6 +659,31 @@ setRlibs <-
                 }
             }
         }
+        topfiles <- Sys.glob(file.path("inst", c("LICENCE", "LICENSE")))
+        if (length(topfiles)) {
+            ## Are these mentioned in DESCRIPTION?
+            lic <- desc["License"]
+            if(!is.na(lic)) {
+                found <- sapply(basename(topfiles),
+                                function(x) grepl(x, lic, fixed = TRUE))
+                topfiles <- topfiles[!found]
+                if (length(topfiles)) {
+                    any <- TRUE
+                    noteLog(Log)
+                    one <- (length(topfiles) == 1L)
+                    msg <- c(if(one) "File" else "Files",
+                             "\n",
+                             .format_lines_with_indent(topfiles),
+                             "\n",
+                             if(one) {
+                                 "will install at top-level and is not mentioned in the DESCRIPTION file.\n"
+                             } else {
+                                 "will install at top-level and are not mentioned in the DESCRIPTION file.\n"
+                             })
+                    printLog(Log, msg)
+                }
+            }
+        }
         if (!any) resultLog(Log, "OK")
     }
 
@@ -1133,26 +1158,31 @@ setRlibs <-
         ## For the time being, allow to turn this off by setting the environment
         ## variable _R_CHECK_FF_CALLS_ to an empty value.
         if (nzchar(R_check_FF)) {
-            registration <- identical(R_check_FF, "registration")
+            registration <-
+                identical(R_check_FF, "registration") && install != "fake"
             checkingLog(Log, "foreign function calls")
+            if(as_cran) Sys.setenv("_R_CHECK_FF_AS_CRAN_" = "TRUE")
             Rcmd <- paste("options(warn=1)\n",
                           if (do_install)
                           sprintf("tools::checkFF(package = \"%s\", registration = %s)\n",
                                   pkgname, registration)
                           else
                           sprintf("tools::checkFF(dir = \"%s\", registration = %s)\n",
-                                  pkgdir, registration))
+                                  pkgdir, "FALSE"))
             out <- R_runR2(Rcmd)
+            Sys.unsetenv("_R_CHECK_FF_AS_CRAN_")
             if (length(out)) {
                 if(any(grepl("^Foreign function calls? with(out| empty)", out)) ||
-                   (!is_base_pkg && any(grepl("in a base package:", out))) ||
-                   any(grepl("^Undeclared packages? in", out))
+                   (!is_base_pkg && any(grepl("to a base package:", out))) ||
+                   any(grepl("^Undeclared packages? in", out)) ||
+                   any(grepl("parameter[s]*, expected ", out))
                    ) warningLog(Log)
                 else noteLog(Log)
                 printLog(Log, paste(c(out, ""), collapse = "\n"))
-                if(!is_base_pkg && any(grepl("in a base package:", out)))
-                    wrapLog("Packages should not make .C/.Call/.Fortran",
-                            "calls to base packages.",
+                if(!is_base_pkg && any(grepl("to a base package:", out)))
+                    wrapLog("Packages should not make",
+                            ".C/.Call/.External/.Fortran",
+                            "calls to a base package.",
                             "They are not part of the API,",
                             "for use only by R itself",
                             "and subject to change without notice.")
@@ -1242,13 +1272,14 @@ setRlibs <-
         }
 
 
-        ## Use of deprecated and defunct?
+        ## Use of deprecated, defunct and platform-specific devices?
         if(!is_base_pkg && R_check_use_codetools && R_check_depr_def) {
+            win <- !is.na(OS_type) && OS_type == "windows"
             Rcmd <- paste("options(warn=1)\n",
                           if (do_install)
-                              sprintf("tools:::.check_depdef(package = \"%s\")\n", pkgname)
+                              sprintf("tools:::.check_depdef(package = \"%s\", WINDOWS = %s)\n", pkgname, win)
                           else
-                              sprintf("tools:::.check_depdef(dir = \"%s\")\n", pkgdir))
+                              sprintf("tools:::.check_depdef(dir = \"%s\", WINDOWS = %s)\n", pkgdir, win))
             out8 <- R_runR2(Rcmd, "R_DEFAULT_PACKAGES=")
         }
         if (length(out1) || length(out2) || length(out3) ||
@@ -2517,9 +2548,15 @@ setRlibs <-
                 }
             } else resultLog(Log, "OK")
 
-            if (do_build_vignettes &&
-                parse_description_field(desc, "BuildVignettes", TRUE)) {
-                checkingLog(Log, "re-building of vignette PDFs")
+            build_vignettes <-
+                parse_description_field(desc, "BuildVignettes", TRUE)
+            if (!build_vignettes && as_cran) {
+                ## FOSS packages must be able to rebuild their vignettes
+                info <- analyze_license(desc["License"])
+                build_vignettes <- info$is_verified
+            }
+            if (do_build_vignettes && build_vignettes) {
+                checkingLog(Log, "re-building of vignette outputs")
                 ## copy the whole pkg directory to check directory
                 ## so we can work in place, and allow ../../foo references.
                 dir.create(vd2 <- "vign_test")
@@ -2566,13 +2603,13 @@ setRlibs <-
                     resultLog(Log, "OK")
                 }
             } else {
-                checkingLog(Log, "re-building of vignettes")
+                checkingLog(Log, "re-building of vignette outputs")
                 resultLog(Log, "SKIPPED")
             }
         } else {
             checkingLog(Log, "running R code from vignettes")
             resultLog(Log, "SKIPPED")
-            checkingLog(Log, "re-building of vignettes")
+            checkingLog(Log, "re-building of vignette outputs")
             resultLog(Log, "SKIPPED")
         }
     }
@@ -3137,7 +3174,8 @@ setRlibs <-
                 errorLog(Log)
                 printLog(Log, paste(c(out, ""), collapse = "\n"))
                 do_exit(1L)
-            } else if(length(res$bad_version))
+            } else if(length(res$bad_version) ||
+                      identical(res$foss_with_BuildVigettes, TRUE))
                 warningLog(Log)
             else if(length(res) > 1L) noteLog(Log)
             else resultLog(Log, "OK")
@@ -3501,8 +3539,9 @@ setRlibs <-
         } else if (a == "--no-build-vignettes") {
             do_build_vignettes  <- FALSE
         } else if (a == "--no-rebuild-vignettes") { # pre-3.0.0 version
-            do_build_vignettes  <- FALSE
-        } else if (a == "--no-vignettes") {
+            stop("'--no-rebuild-vignettes' is defunct: use '--no-build-vignettes' instead",
+                 call. = FALSE, domain = NA)
+      } else if (a == "--no-vignettes") {
             do_vignettes  <- FALSE
         } else if (a == "--no-manual") {
             do_manual  <- FALSE
@@ -3891,7 +3930,7 @@ setRlibs <-
                     messageLog(Log, "this is a Windows-only package, skipping installation")
                     do_install <- FALSE
                 }
-            }
+            } else OS_type <- NA
 
             check_incoming <- Sys.getenv("_R_CHECK_CRAN_INCOMING_", "NA")
             check_incoming <- if(check_incoming == "NA") as_cran else {

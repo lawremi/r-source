@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 2.13.0\n"
 "Report-Msgid-Bugs-To: bugs.r-project.org\n"
-"POT-Creation-Date: 2013-03-07 08:37\n"
+"POT-Creation-Date: 2013-06-29 17:49\n"
 "PO-Revision-Date: 2011-03-26 08:57-0300\n"
 "Last-Translator: Colin Robert <beasley@ufpa.br>\n"
 "Language-Team: http://www.feferraz.net/br/P/Projeto_Traducao_R_Portugues\n"
@@ -268,6 +268,9 @@ msgstr ""
 msgid "Non-portable flags in variable '%s':"
 msgstr ""
 
+msgid "Variables overriding user/site settings:"
+msgstr ""
+
 msgid ""
 "package %s exists but was not installed under R >= 2.10.0 so xrefs cannot be "
 "checked"
@@ -357,6 +360,9 @@ msgid "Argument items with no description in Rd object '%s':"
 msgstr ""
 
 msgid "Auto-generated content requiring editing in Rd object '%s':"
+msgstr ""
+
+msgid "no Rd sections specified"
 msgstr ""
 
 msgid ""
@@ -472,6 +478,9 @@ msgstr ""
 msgid "unable to create temp directory %s"
 msgstr ""
 
+msgid "Running"
+msgstr ""
+
 msgid "Vignette"
 msgstr ""
 
@@ -503,6 +512,12 @@ msgstr ""
 msgid "running 'make' failed"
 msgstr ""
 
+msgid "file '%s' not found"
+msgstr ""
+
+msgid "vignette filename '%s' does not match any of the '%s' filename patterns"
+msgstr ""
+
 msgid "In '%s' vignettes '%s' and '%s' have the same vignette name"
 msgstr ""
 
@@ -510,7 +525,7 @@ msgstr ""
 msgid "argument 'vignette' must be of length 1"
 msgstr "argumento 'package' deve ter comprimento 1"
 
-msgid "file '%s' not found"
+msgid "Vignette engine package not specified."
 msgstr ""
 
 msgid "Unsupported engine name"
@@ -630,6 +645,12 @@ msgid "ERROR: this R is version %s, required is R %s %s"
 msgstr ""
 
 msgid "loading failed"
+msgstr ""
+
+msgid "Expected %s, got %s in evaluating %s"
+msgstr ""
+
+msgid "Failed to get expected %s in evaluating %s"
 msgstr ""
 
 msgid "Changes require specified 'style'"
@@ -982,6 +1003,9 @@ msgstr ""
 msgid "testing '%s' failed"
 msgstr ""
 
+msgid "%d of the package tests failed"
+msgstr ""
+
 msgid "Testing examples for package %s"
 msgstr ""
 
@@ -1013,6 +1037,9 @@ msgid "no parsed files found"
 msgstr ""
 
 msgid "FAILED"
+msgstr ""
+
+msgid "DIFFERED"
 msgstr ""
 
 msgid "running tests of random deviate generation -- fails occasionally"

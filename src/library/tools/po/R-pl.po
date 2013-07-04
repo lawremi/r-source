@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 3.0.0\n"
 "Report-Msgid-Bugs-To: bugs.r-project.org\n"
-"POT-Creation-Date: 2013-03-07 08:37\n"
+"POT-Creation-Date: 2013-06-29 17:49\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Łukasz Daniel <lukasz.daniel@gmail.com>\n"
 "Language-Team: Łukasz Daniel <lukasz.daniel@gmail.com>\n"
@@ -693,6 +693,9 @@ msgstr "Komponenty z ograniczeniami nie są dozwolone:"
 msgid "Non-portable flags in variable '%s':"
 msgstr "Nieprzenośne flagi w zmiennej '%s':"
 
+msgid "Variables overriding user/site settings:"
+msgstr ""
+
 # tools/R/QC.R: 3571
 # message(gettextf("package %s exists but was not installed under R >= 2.10.0 so xrefs cannot be checked", sQuote(pkg)),
 #                         domain = NA)
@@ -895,6 +898,12 @@ msgstr "Pozycje argumentu bez opisu w obiekcie Rd '%s':"
 msgid "Auto-generated content requiring editing in Rd object '%s':"
 msgstr ""
 "Automatycznie wygenerowana treść wymaga wykonania edycji w obiekcie Rd '%s':"
+
+# tools/R/Rd2pdf.R: 434
+# stop("no 'type' specified", call. = FALSE)
+#, fuzzy
+msgid "no Rd sections specified"
+msgstr "nie określono 'type'"
 
 # tools/R/QC.R: 6260
 # warning(gettextf("Generics 'g' in 'env' %s where '%s' errors: %s\nMay need something like\n\n%s\nin NAMESPACE.",
@@ -1307,6 +1316,15 @@ msgstr "Znaleziono więcej niż jeden"
 msgid "unable to create temp directory %s"
 msgstr "nie można utworzyć katalogu tymczasowego %s"
 
+# tools/R/testing.R: 301
+# message(gettextf("  Running %s", sQuote(f)), domain = NA)
+# tools/R/testing.R: 370
+# message(gettextf("  Running %s", sQuote(f)),
+#                 appendLF = FALSE, domain = NA)
+#, fuzzy
+msgid "Running"
+msgstr "Uruchamianie %s"
+
 # tools/R/Vignettes.R: 183
 # stop("Vignette ", sQuote(basename(names(resultsT)[j])), " overwrites the following ", sQuote(name), " output by vignette ", sQuote(basename(names(resultsT)[i])), ": ", paste(basename(bad), collapse=", "))
 msgid "Vignette"
@@ -1363,6 +1381,15 @@ msgstr ""
 msgid "running 'make' failed"
 msgstr "uruchomienie 'make' nie powiodło się"
 
+# tools/R/Vignettes.R: 756
+# stop(gettextf("file '%s' not found", vignette),
+#              domain = NA)
+msgid "file '%s' not found"
+msgstr "nie znaleziono pliku '%s'"
+
+msgid "vignette filename '%s' does not match any of the '%s' filename patterns"
+msgstr ""
+
 # tools/R/Vignettes.R: 637
 # stop(gettextf("In '%s' vignettes '%s' and '%s' have the same vignette name",
 #     		      basename(dirname(dir)), orig, dup),
@@ -1375,11 +1402,11 @@ msgstr "W ilustracjach '%s', '%s' oraz '%s' mają te same nazwy winiet"
 msgid "argument 'vignette' must be of length 1"
 msgstr "argument 'vignette' musi być długości 1"
 
-# tools/R/Vignettes.R: 756
-# stop(gettextf("file '%s' not found", vignette),
-#              domain = NA)
-msgid "file '%s' not found"
-msgstr "nie znaleziono pliku '%s'"
+# tools/R/install.R: 1467
+# stop("ERROR: no packages specified", call.=FALSE)
+#, fuzzy
+msgid "Vignette engine package not specified."
+msgstr "BŁĄD: nie określono pakietów"
 
 # tools/R/Vignettes.R: 854
 # stop("Unsupported engine name ", sQuote(name))
@@ -1639,6 +1666,12 @@ msgstr "BŁĄD: wersja tego programu to R %s, wymagana jest R %s %s"
 # stop("loading failed", call. = FALSE)
 msgid "loading failed"
 msgstr "ładowanie nie powiodło się"
+
+msgid "Expected %s, got %s in evaluating %s"
+msgstr ""
+
+msgid "Failed to get expected %s in evaluating %s"
+msgstr ""
 
 # tools/R/bibstyle.R: 339
 # stop("Changes require specified 'style'")
@@ -2367,6 +2400,9 @@ msgstr "Znaleziono %s, prawdopodobnie z %s"
 msgid "testing '%s' failed"
 msgstr "testowanie '%s' nie powiodło się"
 
+msgid "%d of the package tests failed"
+msgstr ""
+
 # tools/R/testing.R: 239
 # message(gettextf("Testing examples for package %s", sQuote(pkg)),
 #                 domain = NA)
@@ -2456,6 +2492,9 @@ msgstr "nie znaleziono plików przeanalizowanych składniowo"
 # message("FAILED")
 msgid "FAILED"
 msgstr "NIE POWIODŁO SIĘ"
+
+msgid "DIFFERED"
+msgstr ""
 
 # tools/R/testing.R: 568
 # message("running tests of random deviate generation -- fails occasionally")
@@ -2834,9 +2873,15 @@ msgid ""
 msgid_plural ""
 "missing/empty \\name field in Rd files\n"
 "%s"
-msgstr[0] "brakujące/puste pole \\name w pliku Rd\n%s"
-msgstr[1] "brakujące/puste pole \\name w plikach Rd\n%s"
-msgstr[2] "brakujące/puste pole \\name w plikach Rd\n%s"
+msgstr[0] ""
+"brakujące/puste pole \\name w pliku Rd\n"
+"%s"
+msgstr[1] ""
+"brakujące/puste pole \\name w plikach Rd\n"
+"%s"
+msgstr[2] ""
+"brakujące/puste pole \\name w plikach Rd\n"
+"%s"
 
 # tools/R/admin.R: 304
 # warning(sprintf(ngettext(length(bad),

@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 3.0.0\n"
 "Report-Msgid-Bugs-To: bugs.r-project.org\n"
-"POT-Creation-Date: 2013-03-07 08:37\n"
+"POT-Creation-Date: 2013-06-29 17:49\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Łukasz Daniel <lukasz.daniel@gmail.com>\n"
 "Language-Team: Łukasz Daniel <lukasz.daniel@gmail.com>\n"
@@ -119,11 +119,8 @@ msgstr ""
 msgid "Warning: unknown option %s"
 msgstr "Ostrzeżenie: nieznana opcja %s"
 
-# utils/R/Sweave.R: 498
-# message(gettextf("Created PDF document %s", sQuote(ofile)),
-#                 domain = NA)
-msgid "Created PDF document %s"
-msgstr "Utworzono dokument PDF %s"
+msgid "Output file:"
+msgstr ""
 
 # utils/R/Sweave.R: 504
 # message("Compacting PDF document")
@@ -1891,6 +1888,9 @@ msgstr "niewspierany typ wpisu"
 msgid "file '%s' not found"
 msgstr "plik '%s' nie został znaleziony"
 
+msgid "file '%s' did not have execute permissions: corrected"
+msgstr ""
+
 # utils/R/tar.R: 448
 # stop("file size is limited to 8GB")
 msgid "file size is limited to 8GB"
@@ -1916,7 +1916,8 @@ msgstr "ilustracja %s nie została znaleziona"
 # utils/R/vignette.R: 137
 # warning(gettextf("vignette %s has no PDF", sQuote(x$topic)),
 #                 call. = FALSE, domain = NA)
-msgid "vignette %s has no PDF"
+#, fuzzy
+msgid "vignette %s has no PDF/HTML"
 msgstr "ilustracja %s nie posiada PDF"
 
 # utils/R/widgets.R: 23
@@ -2496,6 +2497,12 @@ msgid_plural "packages %s are in use and will not be installed"
 msgstr[0] "pakiet %s jest w użyciu i nie zostanie zainstalowany"
 msgstr[1] "pakiety %s są w użyciu i nie zostaną zainstalowane"
 msgstr[2] "pakiety %s są w użyciu i nie zostaną zainstalowane"
+
+# utils/R/Sweave.R: 498
+# message(gettextf("Created PDF document %s", sQuote(ofile)),
+#                 domain = NA)
+#~ msgid "Created PDF document %s"
+#~ msgstr "Utworzono dokument PDF %s"
 
 #~ msgid "%d): succeeded '%s'"
 #~ msgstr "%d): udało się '%s'"
