@@ -310,7 +310,7 @@ vectorIndex(SEXP x, SEXP thesub, int start, int stop, int pok, SEXP call,
                 max_named = NAMED(x);
 	    if (dup && max_named > 1) {
 		x = shallow_duplicate(x);
-		nthcdr(x, (int) offset);
+		SETCAR(cx, x);
 	    }
 	} else {
 	    cx = x;
