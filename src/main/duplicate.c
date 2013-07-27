@@ -205,6 +205,28 @@ static SEXP duplicate_child(SEXP s, Rboolean deeply) {
     }
 }
 
+/* Ensures duplication always descends into any S4 .(x)Data slot */
+static void duplicate_slots(SEXP to, SEXP from, Rboolean deeply) {
+  SEXP sp = ATTRIB(from), h, t;
+  static SEXP s_xData, s_dotData;
+  if(!s_xData) {
+    s_xData = install(".xData");
+    s_dotData = install(".Data");
+  }
+  PROTECT(h = t = CONS(R_NilValue, R_NilValue));
+  while(sp != R_NilValue) {
+    Rboolean isDotData = (TAG(sp) == s_dotData || TAG(sp) == s_xData);
+    SETCDR(t, CONS(duplicate_child(CAR(sp), isDotData || deeply), R_NilValue));
+    t = CDR(t);
+    COPY_TAG(t, sp);
+    DUPLICATE_ATTRIB(t, sp, deeply);
+    sp = CDR(sp);
+  }
+  t = CDR(h);
+  SET_ATTRIB(to, t);
+  UNPROTECT(1);
+}
+
 static SEXP duplicate1(SEXP s, Rboolean deeply)
 {
     SEXP h, t,  sp;
@@ -311,7 +333,7 @@ static SEXP duplicate1(SEXP s, Rboolean deeply)
     case S4SXP:
 	PROTECT(s);
 	PROTECT(t = allocS4Object());
-	DUPLICATE_ATTRIB(t, s, deeply);
+        duplicate_slots(t, s, deeply);
 	UNPROTECT(2);
 	break;
     default:
