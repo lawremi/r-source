@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 3.0.0\n"
 "Report-Msgid-Bugs-To: bugs.r-project.org\n"
-"POT-Creation-Date: 2013-06-09 21:23\n"
+"POT-Creation-Date: 2013-08-26 08:03\n"
 "PO-Revision-Date: 2013-03-13 12:45+0100\n"
 "Last-Translator: Detlef Steuer <steuer@hsu-hh.de>\n"
 "Language-Team: R-core <r-core@r-project.org>\n"
@@ -618,6 +618,9 @@ msgstr "'vec' muss nicht-abfallend sortiert werden"
 msgid "using the first element of 'value' of type \"expression\""
 msgstr "nutze das erste Element von 'value' vom Typ \"expression\""
 
+msgid "class of 'x' was discarded"
+msgstr ""
+
 msgid "'mode' must be \"double\" (\"real\"), \"integer\" or \"character\""
 msgstr "'mode' muss \"double\" (\"real\"), \"integer\" oder \"character\" sein"
 
@@ -1084,7 +1087,8 @@ msgstr "lokaler Wert durch import %s ersetzt, während %s geladen wurde"
 msgid "cannot import into a sealed namespace"
 msgstr "kann nicht in einen versiegelten Namensraum importieren"
 
-msgid "replacing previous import %s when loading %s"
+#, fuzzy
+msgid "replacing previous import by %s when loading %s"
 msgstr "vorhergehender Import %s während des Ladens von %s ersetzt"
 
 msgid "invalid import target"
@@ -1125,9 +1129,6 @@ msgstr "doppelte Symbolnamen %s in useDynlib(\"%s\")"
 
 msgid "bad 'S3method' directive: %s"
 msgstr "unbrauchbare 'S3method' Direktive: %s"
-
-msgid "too many 'S3method' directives"
-msgstr "zu viele 'S3method' Direktiven"
 
 msgid "unknown namespace directive: %s"
 msgstr "unbekannte Namensraum Direktive: %s"
@@ -1237,11 +1238,17 @@ msgstr "Länge von 'scale' muss mit der Spaltenanzahl von 'x' übereinstimmen"
 msgid "either specify 'nmax' or 'n', but not both."
 msgstr "entweder 'nmax' oder 'n' angeben, aber nicht beide"
 
+msgid "'from' cannot be NA, NaN or infinite"
+msgstr ""
+
 msgid "argument 'length.out' must be of length 1"
 msgstr "Argument 'length.out' muss Länge 1 haben"
 
 msgid "first element used of 'length.out' argument"
 msgstr "erstes Element von 'length.out' Argument benutzt"
+
+msgid "'to' cannot be NA, NaN or infinite"
+msgstr ""
 
 msgid "invalid (to - from)/by in seq(.)"
 msgstr "ungültiges (to - from)/by in seq(.)"
@@ -1697,6 +1704,9 @@ msgid "Warning message:\n"
 msgid_plural "Warning messages:\n"
 msgstr[0] "Warnmeldung:\n"
 msgstr[1] "Warnmeldungen:\n"
+
+#~ msgid "too many 'S3method' directives"
+#~ msgstr "zu viele 'S3method' Direktiven"
 
 #~ msgid "non-square matrix in 'chol'"
 #~ msgstr "nicht-quadratische Matrix in 'chol'"

@@ -1,5 +1,5 @@
 
-R Under development (unstable) (2013-06-04 r62863) -- "Unsuffered Consequences"
+R Under development (unstable) (2013-08-24 r63673) -- "Unsuffered Consequences"
 Copyright (C) 2013 The R Foundation for Statistical Computing
 Platform: x86_64-unknown-linux-gnu (64-bit)
 
@@ -1516,11 +1516,10 @@ List of 150
 [5,]   0.00 255.00    0
 > colorRampPalette(c("blue", "red"))( 4 ) ## (n)
 [1] "#0000FF" "#5500AA" "#AA0055" "#FF0000"
-> ## Don't show: 
-> ## special case, invalid in R <= 2.15.0:
-> bb <- colorRampPalette(2)(4)
-> stopifnot(bb[1] == bb)
-> ## End Don't show
+> ## a ramp in opacity of blue values
+> colorRampPalette(c(rgb(0,0,1,1), rgb(0,0,1,0)), alpha=TRUE)(6)
+[1] "#0000FFFF" "#0000FFCC" "#0000FF99" "#0000FF65" "#0000FF32" "#0000FF00"
+> 
 > require(graphics)
 > 
 > ## Here space="rgb" gives palettes that vary only in saturation,
@@ -1845,16 +1844,6 @@ gray    76.97594   0.00000    0.00000
 > ### Keywords: dplot
 > 
 > ### ** Examples
-> 
-> x1  <- matrix(rnorm(1e3), ncol = 2)
-> x2  <- matrix(rnorm(1e3, mean = 3, sd = 1.5), ncol = 2)
-> x   <- rbind(x1, x2)
-> 
-> dcols <- densCols(x)
-KernSmooth 2.23 loaded
-Copyright M. P. Wand 1997-2009
-> graphics::plot(x, col = dcols, pch = 20, main = "n = 1000")
-> 
 > 
 > 
 > cleanEx()
@@ -2650,26 +2639,6 @@ pdf
 > 
 > 
 > cleanEx()
-> nameEx("png")
-> ### * png
-> 
-> flush(stderr()); flush(stdout())
-> 
-> ### Name: png
-> ### Title: BMP, JPEG, PNG and TIFF graphics devices
-> ### Aliases: png jpeg tiff bmp
-> ### Keywords: device
-> 
-> ### ** Examples
-> 
-> ## these examples will work only if the devices are available
-> ## and cairo or an X11 display or an OS X display is available.
-> 
-> ## copy current plot to a (large) PNG file
-> ## Not run: dev.print(png, file = "myplot.png", width = 1024, height = 768)
-> 
-> 
-> cleanEx()
 > nameEx("postscriptFonts")
 > ### * postscriptFonts
 > 
@@ -2966,6 +2935,20 @@ $encoding
 attr(,"class")
 [1] "Type1Font"
 
+$ArialMT
+$family
+[1] "ArialMT"
+
+$metrics
+[1] "ArialMT.afm"            "ArialMT-Bold.afm"       "ArialMT-Italic.afm"    
+[4] "ArialMT-BoldItalic.afm" "Symbol.afm"            
+
+$encoding
+[1] "default"
+
+attr(,"class")
+[1] "Type1Font"
+
 $ComputerModern
 $family
 [1] "ComputerModern"
@@ -3171,9 +3154,10 @@ attr(,"class")
 [13] "URWBookman"           "NimbusMon"            "NimbusSan"           
 [16] "URWHelvetica"         "NimbusSanCond"        "CenturySch"          
 [19] "URWPalladio"          "NimbusRom"            "URWTimes"            
-[22] "Japan1"               "Japan1HeiMin"         "Japan1GothicBBB"     
-[25] "Japan1Ryumin"         "Korea1"               "Korea1deb"           
-[28] "CNS1"                 "GB1"                  "Jp_UCS-2"            
+[22] "ArialMT"              "Japan1"               "Japan1HeiMin"        
+[25] "Japan1GothicBBB"      "Japan1Ryumin"         "Korea1"              
+[28] "Korea1deb"            "CNS1"                 "GB1"                 
+[31] "Jp_UCS-2"            
 > 
 > 
 > 
@@ -3319,64 +3303,6 @@ List of 18
  $ fillOddEven: logi FALSE
 > ps.options(reset = TRUE) # back to factory-fresh
 > 
-> 
-> 
-> cleanEx()
-> nameEx("quartz")
-> ### * quartz
-> 
-> flush(stderr()); flush(stdout())
-> 
-> ### Name: quartz
-> ### Title: OS X Quartz Device
-> ### Aliases: quartz quartz.options quartz.save
-> ### Keywords: device
-> 
-> ### ** Examples
-> ## Not run: 
-> ##D ## put something like this is your .Rprofile to customize the defaults
-> ##D setHook(packageEvent("grDevices", "onLoad"),
-> ##D         function(...) grDevices::quartz.options(width = 8, height = 6,
-> ##D                                                 pointsize = 10))
-> ## End(Not run)
-> 
-> 
-> cleanEx()
-> nameEx("quartzFonts")
-> ### * quartzFonts
-> 
-> flush(stderr()); flush(stdout())
-> 
-> ### Name: quartzFonts
-> ### Title: quartz Fonts
-> ### Aliases: quartzFont quartzFonts
-> ### Keywords: device
-> 
-> ### ** Examples
-> 
-> quartzFonts()
-$serif
-[1] "Times-Roman"      "Times-Bold"       "Times-Italic"     "Times-BoldItalic"
-
-$sans
-[1] "Helvetica"             "Helvetica-Bold"        "Helvetica-Oblique"    
-[4] "Helvetica-BoldOblique"
-
-$mono
-[1] "Courier"             "Courier-Bold"        "Courier-Oblique"    
-[4] "Courier-BoldOblique"
-
-> quartzFonts("mono")
-$mono
-[1] "Courier"             "Courier-Bold"        "Courier-Oblique"    
-[4] "Courier-BoldOblique"
-
-> ## Not run: 
-> ##D ## for CJK locales you can use something like
-> ##D quartzFonts(sans = quartzFont(rep("AppleGothic", 4)),
-> ##D             serif = quartzFont(rep("AppleMyungjp", 4)))
-> ##D ## since the default fonts may well not have the glyphs needed
-> ## End(Not run)
 > 
 > 
 > cleanEx()
@@ -3554,76 +3480,6 @@ v 0.98039216 0.7647059 0.4588235 0.8549020 0.9960784
 > 
 > ## See  help(persp) {after attaching the 'graphics' package}
 > ##      -----------
-> 
-> 
-> 
-> cleanEx()
-> nameEx("x11")
-> ### * x11
-> 
-> flush(stderr()); flush(stdout())
-> 
-> ### Name: x11
-> ### Title: X Window System Graphics
-> ### Aliases: x11 X11 X11.options
-> ### Keywords: device
-> 
-> ### ** Examples
-> ## Not run: 
-> ##D ## put something like this is your .Rprofile to customize the defaults
-> ##D setHook(packageEvent("grDevices", "onLoad"),
-> ##D         function(...) grDevices::X11.options(width = 8, height = 6, xpos = 0,
-> ##D                                              pointsize = 10))
-> ## End(Not run)
-> 
-> 
-> cleanEx()
-> nameEx("x11Fonts")
-> ### * x11Fonts
-> 
-> flush(stderr()); flush(stdout())
-> 
-> ### Name: X11Fonts
-> ### Title: X11 Fonts
-> ### Aliases: X11Font X11Fonts
-> ### Keywords: device
-> 
-> ### ** Examples
-> 
-> X11Fonts()
-$serif
-[1] "-*-times-%s-%s-*-*-%d-*-*-*-*-*-*-*"
-
-$sans
-[1] "-*-helvetica-%s-%s-*-*-%d-*-*-*-*-*-*-*"
-
-$mono
-[1] "-*-courier-%s-%s-*-*-%d-*-*-*-*-*-*-*"
-
-$Times
-[1] "-adobe-times-%s-%s-*-*-%d-*-*-*-*-*-*-*"
-
-$Helvetica
-[1] "-adobe-helvetica-%s-%s-*-*-%d-*-*-*-*-*-*-*"
-
-$CyrTimes
-[1] "-cronyx-times-%s-%s-*-*-%d-*-*-*-*-*-*-*"
-
-$CyrHelvetica
-[1] "-cronyx-helvetica-%s-%s-*-*-%d-*-*-*-*-*-*-*"
-
-$Arial
-[1] "-monotype-arial-%s-%s-*-*-%d-*-*-*-*-*-*-*"
-
-$Mincho
-[1] "-*-mincho-%s-%s-*-*-%d-*-*-*-*-*-*-*"
-
-> X11Fonts("mono")
-$mono
-[1] "-*-courier-%s-%s-*-*-%d-*-*-*-*-*-*-*"
-
-> utopia <- X11Font("-*-utopia-*-*-*-*-*-*-*-*-*-*-*-*")
-> X11Fonts(utopia = utopia)
 > 
 > 
 > 
@@ -3856,7 +3712,7 @@ $zlab
 > ###
 > options(digits = 7L)
 > base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
-Time elapsed:  10.591 0.32 10.959 0 0 
+Time elapsed:  8.456 0.171 8.656 0 0 
 > grDevices::dev.off()
 null device 
           1 

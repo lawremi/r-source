@@ -605,6 +605,31 @@ static int ExtractExactArg(SEXP args)
     return exact;
 }
 
+/* Version of DispatchOrEval for "[" and friends that speeds up simple cases.
+   Also defined in subassign.c */
+static R_INLINE
+int R_DispatchOrEvalSP(SEXP call, SEXP op, const char *generic, SEXP args,
+		    SEXP rho, SEXP *ans)
+{
+    if (args != R_NilValue && CAR(args) != R_DotsSymbol) {
+	SEXP x = eval(CAR(args), rho);
+	PROTECT(x);
+	if (! OBJECT(x)) {
+	    *ans = CONS(x, evalListKeepMissing(CDR(args), rho));
+	    UNPROTECT(1);
+	    return FALSE;
+	}
+	SEXP prom = mkPROMISE(CAR(args), R_GlobalEnv);
+	SET_PRVALUE(prom, x);
+	args = CONS(prom, CDR(args));
+	UNPROTECT(1);
+    }
+    PROTECT(args);
+    int disp = DispatchOrEval(call, op, generic, args, rho, ans, 0, 0);
+    UNPROTECT(1);
+    return disp;
+}
+
 /* The "[" subset operator.
  * This provides the most general form of subsetting. */
 
@@ -618,7 +643,7 @@ SEXP attribute_hidden do_subset(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* to the generic code below.  Note that evaluation */
     /* retains any missing argument indicators. */
 
-    if(DispatchOrEval(call, op, "[", args, rho, &ans, 0, 0)) {
+    if(R_DispatchOrEvalSP(call, op, "[", args, rho, &ans)) {
 /*     if(DispatchAnyOrEval(call, op, "[", args, rho, &ans, 0, 0)) */
 	if (NAMED(ans))
 	    SET_NAMED(ans, 2);
@@ -779,19 +804,20 @@ SEXP attribute_hidden do_subset_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	    int len = length(ans);
 
 	    if(!drop || len > 1) {
+		// must grab these before the dim is set.
+		SEXP nm = PROTECT(getAttrib(ans, R_NamesSymbol));
 		PROTECT(attr = allocVector(INTSXP, 1));
 		INTEGER(attr)[0] = length(ans);
 		setAttrib(ans, R_DimSymbol, attr);
-		UNPROTECT(1);
 		if((attrib = getAttrib(x, R_DimNamesSymbol)) != R_NilValue) {
 		    /* reinstate dimnames, include names of dimnames */
 		    PROTECT(nattrib = duplicate(attrib));
-		    SET_VECTOR_ELT(nattrib, 0,
-				   getAttrib(ans, R_NamesSymbol));
+		    SET_VECTOR_ELT(nattrib, 0, nm);
 		    setAttrib(ans, R_DimNamesSymbol, nattrib);
 		    setAttrib(ans, R_NamesSymbol, R_NilValue);
 		    UNPROTECT(1);
 		}
+		UNPROTECT(2);
 	    }
 	}
     } else {
@@ -847,8 +873,7 @@ SEXP attribute_hidden do_subset2(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* through to the generic code below.  Note that */
     /* evaluation retains any missing argument indicators. */
 
-    if(DispatchOrEval(call, op, "[[", args, rho, &ans, 0, 0)) {
-/*     if(DispatchAnyOrEval(call, op, "[[", args, rho, &ans, 0, 0)) */
+    if(R_DispatchOrEvalSP(call, op, "[[", args, rho, &ans)) {
 	if (NAMED(ans))
 	    SET_NAMED(ans, 2);
 	return(ans);
@@ -911,7 +936,7 @@ SEXP attribute_hidden do_subset2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
     if( TYPEOF(x) == ENVSXP ) {
 	if( nsubs != 1 || !isString(CAR(subs)) || length(CAR(subs)) != 1 )
 	    errorcall(call, _("wrong arguments for subsetting an environment"));
-	ans = findVarInFrame(x, install(translateChar(STRING_ELT(CAR(subs), 0))));
+	ans = findVarInFrame(x, installTrChar(STRING_ELT(CAR(subs), 0)));
 	if( TYPEOF(ans) == PROMSXP ) {
 	    PROTECT(ans);
 	    ans = eval(ans, R_GlobalEnv);
@@ -1036,6 +1061,7 @@ enum pmatch
 pstrmatch(SEXP target, SEXP input, size_t slen)
 {
     const char *st = "";
+    const void *vmax = vmaxget();
 
     if(target == R_NilValue)
 	return NO_MATCH;
@@ -1048,9 +1074,13 @@ pstrmatch(SEXP target, SEXP input, size_t slen)
 	st = translateChar(target);
 	break;
     }
-    if(strncmp(st, translateChar(input), slen) == 0)
+    if(strncmp(st, translateChar(input), slen) == 0) {
+	vmaxset(vmax);
 	return (strlen(st) == slen) ?  EXACT_MATCH : PARTIAL_MATCH;
-    else return NO_MATCH;
+    } else {
+	vmaxset(vmax);
+	return NO_MATCH;
+    }
 }
 
 
@@ -1091,7 +1121,7 @@ SEXP attribute_hidden do_subset3(SEXP call, SEXP op, SEXP args, SEXP env)
     /* through to the generic code below.  Note that */
     /* evaluation retains any missing argument indicators. */
 
-    if(DispatchOrEval(call, op, "$", args, env, &ans, 0, 0)) {
+    if(R_DispatchOrEvalSP(call, op, "$", args, env, &ans)) {
 	UNPROTECT(2);
 	if (NAMED(ans))
 	    SET_NAMED(ans, 2);
@@ -1214,7 +1244,7 @@ SEXP attribute_hidden R_subset3_dflt(SEXP x, SEXP input, SEXP call)
 	return R_NilValue;
     }
     else if( isEnvironment(x) ){
-	y = findVarInFrame(x, install(translateChar(input)));
+	y = findVarInFrame(x, installTrChar(input));
 	if( TYPEOF(y) == PROMSXP ) {
 	    PROTECT(y);
 	    y = eval(y, R_GlobalEnv);

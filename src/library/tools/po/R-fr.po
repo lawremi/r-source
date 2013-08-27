@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.12.0\n"
 "Report-Msgid-Bugs-To: bugs.r-project.org\n"
-"POT-Creation-Date: 2013-06-29 17:49\n"
+"POT-Creation-Date: 2013-08-26 08:03\n"
 "PO-Revision-Date: 2013-03-19 21:22+0100\n"
 "Last-Translator: Philippe Grosjean <phgrosjean@sciviews.org>\n"
 "Language-Team: French <R-core@r-project.org>\n"
@@ -194,9 +194,6 @@ msgstr "Champs comportant des valeurs non ASCII :"
 msgid "These fields must have ASCII values."
 msgstr "Ces champs doivent avoir des valeurs ASCII."
 
-msgid "Required fields missing:"
-msgstr "Champs requis mais manquants :"
-
 msgid "Malformed package version."
 msgstr "Version de package mal orthographiée."
 
@@ -284,11 +281,18 @@ msgstr "Standardisable : %s"
 msgid "Standardized license specification:"
 msgstr "Spécification de licence standard :"
 
+msgid "Deprecated license: %s"
+msgstr ""
+
 msgid "Invalid license file pointers: %s"
 msgstr "Pointeur de fichier licence incorrect : %s"
 
-msgid "Components with restrictions not permitted:"
+#, fuzzy
+msgid "License components with restrictions not permitted:"
 msgstr "Le composants avec restrictions ne sont pas autorisés :"
+
+msgid "Licenses which are templates and need '+ file LICENSE':"
+msgstr ""
 
 msgid "Non-portable flags in variable '%s':"
 msgstr "Indicateur non portable dans la variable '%s' :"
@@ -376,11 +380,42 @@ msgstr "appels 'library' ou 'require' non déclarés depuis :"
 msgid "'library' or 'require' call not declared from: %s"
 msgstr "appels 'library' ou 'require' non déclarés depuis : %s"
 
+#, fuzzy
+msgid "'library' or 'require' calls to packages already attached by Depends:"
+msgstr "appels 'library' ou 'require' non déclarés depuis :"
+
+#, fuzzy
+msgid ""
+"'library' or 'require' call to %s which was already attached by Depends."
+msgstr "appels 'library' ou 'require' non déclarés depuis : %s"
+
+msgid "Namespaces in Imports field not imported from:"
+msgstr ""
+
+#, fuzzy
+msgid "Namespace in Imports field not imported from: %s"
+msgstr "Dépendances d'espaces de noms non requises :"
+
+msgid "Packages in Depends field not imported from:"
+msgstr ""
+
+msgid "Package in Depends field not imported from: %s"
+msgstr ""
+
+msgid "Namespaces imported from by ':::' calls:"
+msgstr ""
+
+msgid "Namespace imported from by a ':::' call: %s"
+msgstr ""
+
 msgid "'data(package=)' calls not declared from:"
 msgstr "appel 'data(package=)' non déclaré depuis :"
 
 msgid "'data(package=)' call not declared from: %s"
 msgstr "appel 'data(package=)' non déclaré depuis : %s"
+
+msgid "Package has no 'Version' field"
+msgstr ""
 
 msgid "NB: need Internet access to use CRAN incoming checks"
 msgstr ""
@@ -708,10 +743,28 @@ msgstr "ERREUR : cette version de R est %s, requis R %s %s "
 msgid "loading failed"
 msgstr "le chargement a échoué"
 
-msgid "Expected %s, got %s in evaluating %s"
+msgid "assertConditon: Successfully caught a condition"
 msgstr ""
 
-msgid "Failed to get expected %s in evaluating %s"
+msgid "assertCondition: caught %s"
+msgstr ""
+
+msgid "Got %s in evaluating %s; wanted %s"
+msgstr ""
+
+msgid "Failed to get %s in evaluating %s"
+msgstr ""
+
+msgid "Failed to get error in evaluating %s"
+msgstr ""
+
+msgid "Asserted error: %s"
+msgstr ""
+
+msgid "Got warning in evaluating %s, but also an error"
+msgstr ""
+
+msgid "Asserted warning: %s"
 msgstr ""
 
 msgid "Changes require specified 'style'"
@@ -864,6 +917,9 @@ msgid ""
 msgstr ""
 "le répertoire include de R est vide -- il faut peut-être installer R-devel."
 "rpm ou similaire"
+
+msgid "package %s %s was found, but %s %s is required by %s"
+msgstr ""
 
 msgid "no source files found"
 msgstr "aucun fichier source n'est trouvé"
@@ -1272,21 +1328,32 @@ msgstr[1] ""
 "Appels .Internal trouvés dans les méthodes pour les classes de références "
 "suivantes :"
 
-msgid "Found an obsolete call in the following function:"
-msgid_plural "Found an obsolete call in the following functions:"
+#, fuzzy
+msgid "Found an obsolete/platform-specific call in the following function:"
+msgid_plural ""
+"Found an obsolete/platform-specific call in the following functions:"
 msgstr[0] "Appel obsolète trouvé dans la fonction suivante :"
 msgstr[1] "Appels obsolète trouvés dans les fonctions suivantes :"
 
-msgid "Found an obsolete call in methods for the following S4 generic:"
-msgid_plural "Found an obsolete call in methods for the following S4 generics:"
+#, fuzzy
+msgid ""
+"Found an obsolete/platform-specific call in methods for the following S4 "
+"generic:"
+msgid_plural ""
+"Found an obsolete/platform-specific call in methods for the following S4 "
+"generics:"
 msgstr[0] ""
 "Appel obsolète trouvé dans les méthodes pour le générique S4 suivant :"
 msgstr[1] ""
 "Appel obsolète trouvé dans les méthodes pour les génériques S4 suivants :"
 
-msgid "Found an obsolete call in methods for the following reference class:"
+#, fuzzy
+msgid ""
+"Found an obsolete/platform-specific call in methods for the following "
+"reference class:"
 msgid_plural ""
-"Found an obsolete call in methods for the following reference classes:"
+"Found an obsolete/platform-specific call in methods for the following "
+"reference classes:"
 msgstr[0] ""
 "Appel obsolète trouvé dans les méthodes pour la classe de référence "
 "suivante :"
@@ -1303,6 +1370,11 @@ msgid "Found the defunct/removed function:"
 msgid_plural "Found the defunct/removed functions:"
 msgstr[0] "Fonction obsolète ou éliminée trouvée : "
 msgstr[1] "Fonctions obsolètes ou éliminées trouvées : "
+
+msgid "Found the platform-specific device:"
+msgid_plural "Found the platform-specific devices:"
+msgstr[0] ""
+msgstr[1] ""
 
 msgid "Generic without any methods in %s: %s"
 msgid_plural "Generics without any methods in %s: %s"
@@ -1326,6 +1398,12 @@ msgid "unable to re-encode %s line %s"
 msgid_plural "unable to re-encode %s lines %s"
 msgstr[0] "impossible de réencoder %s ligne %s"
 msgstr[1] "impossible de réencoder %s lignes %s"
+
+#, fuzzy
+msgid "Required field missing or empty:"
+msgid_plural "Required fields missing or empty:"
+msgstr[0] "Champs requis mais manquants :"
+msgstr[1] "Champs requis mais manquants :"
 
 msgid "Help on topic '%s' was found in the following package:"
 msgid_plural "Help on topic '%s' was found in the following packages:"
@@ -1690,9 +1768,6 @@ msgstr[1] "les objets %s sont créés par plus d'un appel aux données"
 #~ msgstr "Dépendences de vignette non requises :"
 
 #~ msgid "Namespace dependencies not required:"
-#~ msgstr "Dépendances d'espaces de noms non requises :"
-
-#~ msgid "Namespace dependency not required: %s"
 #~ msgstr "Dépendances d'espaces de noms non requises :"
 
 #~ msgid "Package name and namespace differ."

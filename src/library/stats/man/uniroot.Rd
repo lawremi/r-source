@@ -91,12 +91,15 @@ uniroot(f, interval, \dots,
 }
 
 \value{
-  A list with four components: \code{root} and \code{f.root} give the
-  location of the root and the value of the function evaluated at that
-  point. \code{iter} and \code{estim.prec} give the number of iterations
-  used and an approximate estimated precision for \code{root}.  (If the
-  root occurs at one of the endpoints, the estimated precision is
-  \code{NA}.)
+  A list with at least four components: \code{root} and \code{f.root}
+  give the location of the root and the value of the function evaluated
+  at that point. \code{iter} and \code{estim.prec} give the number of
+  iterations used and an approximate estimated precision for
+  \code{root}.  (If the root occurs at one of the endpoints, the
+  estimated precision is \code{NA}.)
+
+  Further components may be added in future: component \code{init.it}
+  was added in \R 3.1.0.  
 }
 %\author{of \code{extendInt} and \code{check.conv}: Martin Maechler.}% originally as
 % safeUroot() in CRAN packages nor1mix and copula
@@ -164,14 +167,14 @@ tools::assertCondition( uniroot(function(x) 1, 0:1, extendInt="yes"),
 ## Convergence checking :
 sinc <- function(x) ifelse(x == 0, 1, sin(x)/x)
 curve(sinc, -6,18); abline(h=0,v=0, lty=3, col=adjustcolor("gray", 0.8))
-\dontshow{tools::assertCondition(}
+\dontshow{tools::assertWarning(}
 uniroot(sinc, c(0,5), extendInt="yes", maxiter=4) #-> "just" a warning
-\dontshow{ , "warning", verbose=TRUE)}
+\dontshow{ , verbose=TRUE)}
 
 ## now with  check.conv=TRUE, must signal a convergence error :
-\dontshow{tools::assertCondition(}
+\dontshow{tools::assertError(}
 uniroot(sinc, c(0,5), extendInt="yes", maxiter=4, check.conv=TRUE)
-\dontshow{ , "error", verbose=TRUE)}
+\dontshow{ , verbose=TRUE)}
 
 ### Weibull cumulative hazard (example origin, Ravi Varadhan):
 cumhaz <- function(t, a, b) b * (t/b)^a
@@ -195,8 +198,8 @@ r1 <- uniroot(froot, u= 0.99, a=a, b=b, interval= c(0.01, 10),
 stopifnot(all.equal(0.99, cumhaz(r1$root, a=a, b=b)))
 
 ## An error if 'extendInt' assumes "wrong zero-crossing direction":
-\dontshow{tools::assertCondition(}
+\dontshow{tools::assertError(}
 uniroot(froot, u= 0.99, a=a, b=b, interval= c(0.1, 10), extendInt="down")
-\dontshow{ , "error", verbose=TRUE)}
+\dontshow{ , verbose=TRUE)}
 }
 \keyword{optimize}

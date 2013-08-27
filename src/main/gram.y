@@ -2,7 +2,7 @@
 /*
  *  R : A Computer Langage for Statistical Data Analysis
  *  Copyright (C) 1995, 1996, 1997  Robert Gentleman and Ross Ihaka
- *  Copyright (C) 1997--2012  The R Core Team
+ *  Copyright (C) 1997--2013  The R Core Team
  *  Copyright (C) 2009--2011  Romain Francois
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -1048,7 +1048,7 @@ static SEXP TagArg(SEXP arg, SEXP tag, YYLTYPE *lloc)
 {
     switch (TYPEOF(tag)) {
     case STRSXP:
-	tag = install(translateChar(STRING_ELT(tag, 0)));
+	tag = installTrChar(STRING_ELT(tag, 0));
     case NILSXP:
     case SYMSXP:
 	return lang2(arg, tag);
@@ -1463,6 +1463,8 @@ static SEXP R_Parse(int n, ParseStatus *status, SEXP srcfile)
 	    break;
 	case PARSE_INCOMPLETE:
 	case PARSE_ERROR:
+	    if (ParseState.keepSrcRefs) 
+	        finalizeData();
 	    R_PPStackTop = savestack;
 	    R_FinalizeSrcRefState();	    
 	    return R_NilValue;
@@ -2678,6 +2680,14 @@ static SEXP install_and_save(char * text)
     return install(text);
 }
 
+/* Get an R symbol, and set different yytext.  Used for translation of -> to <-. ->> to <<- */
+static SEXP install_and_save2(char * text, char * savetext)
+{
+    strcpy(yytext, savetext);
+    return install(text);
+}
+
+
 /* Split the input stream into tokens. */
 /* This is the lowest of the parsing levels. */
 
@@ -2769,11 +2779,11 @@ static int token(void)
     case '-':
 	if (nextchar('>')) {
 	    if (nextchar('>')) {
-		yylval = install_and_save("<<-");
+		yylval = install_and_save2("<<-", "->>");
 		return RIGHT_ASSIGN;
 	    }
 	    else {
-		yylval = install_and_save("<-");
+		yylval = install_and_save2("<-", "->");
 		return RIGHT_ASSIGN;
 	    }
 	}
@@ -2863,9 +2873,8 @@ static int token(void)
 	   help for 'Deprecated'.  S-PLUS 6.2 still allowed this, so
 	   presumably it was for compatibility with S. */
 	if (nextchar('*')) {
-	    strcpy(yytext, "**");
-	    yylval = install("^");
-	    c = '^';
+	    yylval = install_and_save2("^", "**");
+	    return '^';
 	} else
 	    yylval = install_and_save("*");
 	return c;

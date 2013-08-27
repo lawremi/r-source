@@ -6,6 +6,8 @@
 \name{Arithmetic}
 \title{Arithmetic Operators}
 \usage{
++ x
+- x
 x + y
 x - y
 x * y
@@ -29,15 +31,20 @@ x \%/\% y
 \concept{quotient}
 \concept{division}
 \description{
-  These binary operators perform arithmetic on numeric or complex vectors
-  (or objects which can be coerced to them).
+  These unary and binary operators perform arithmetic on numeric or
+  complex vectors (or objects which can be coerced to them).
 }
 \arguments{
   \item{x, y}{numeric or complex vectors or objects which can be
     coerced to such, or other objects for which methods have been written.}
 }
 \value{
-  These operators return vectors containing the result of the element
+  Unary \code{+} and unary \code{-} return a numeric or complex vector.
+  All attributes (including class) are preserved if there is no
+  coercion: logical \code{x} is coerced to integer and names, dims and
+  dimnames are preserved.
+  
+  The binary operators return vectors containing the result of the element
   by element operations.  The elements of shorter vectors are recycled
   as necessary (with a \code{\link{warning}} when they are recycled only
   \emph{fractionally}).  The operators are \code{+} for addition,
@@ -74,8 +81,8 @@ x \%/\% y
   
 }
 \details{
-  The binary arithmetic operators are generic functions: methods can be
-  written for them individually or via the
+  The unary and binary arithmetic operators are generic functions:
+  methods can be written for them individually or via the
   \code{\link[=S3groupGeneric]{Ops}} group generic function.  (See
   \code{\link[=S3groupGeneric]{Ops}} for how dispatch is computed.)
 
@@ -120,7 +127,7 @@ x \%/\% y
   These operators are members of the S4 \code{\link{Arith}} group generic,
   and so methods can be written for them individually as well as for the
   group generic (or the \code{Ops} group generic), with arguments
-  \code{c(e1, e2)}.
+  \code{c(e1, e2)} (with \code{e2} missing for a unary operator).
 }
 \section{Implementation limits}{
   \R is dependent on OS services (and they on FPUs) for floating-point

@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: R 2.4.0 \n"
 "Report-Msgid-Bugs-To: bugs.r-project.org\n"
-"POT-Creation-Date: 2013-06-09 21:23\n"
+"POT-Creation-Date: 2013-08-26 08:03\n"
 "PO-Revision-Date: 2013-03-02 09:39+0200 \n"
 "Last-Translator: Triad sou <triadsou@gmail.com> \n"
 "Language-Team: RjpWiki Message Translation Team <mokada@md.tsukuba.ac.jp> \n"
@@ -617,6 +617,9 @@ msgstr " 'vec' は非減少順にソートされていなければいけませ�
 msgid "using the first element of 'value' of type \"expression\""
 msgstr " タイプ \"expression\" の 'value' の最初の要素だけを使います "
 
+msgid "class of 'x' was discarded"
+msgstr ""
+
 msgid "'mode' must be \"double\" (\"real\"), \"integer\" or \"character\""
 msgstr ""
 " 'mode' は \"double\" (\"real\") , \"integer\" または \"character\" でなけれ"
@@ -1087,7 +1090,8 @@ msgstr " ローカル変数をインポート %s で置き換えています (%s
 msgid "cannot import into a sealed namespace"
 msgstr " 封印された名前空間にはインポートできません "
 
-msgid "replacing previous import %s when loading %s"
+#, fuzzy
+msgid "replacing previous import by %s when loading %s"
 msgstr " 以前のインポート %s を置き換えています (%s のロード中) "
 
 msgid "invalid import target"
@@ -1129,9 +1133,6 @@ msgstr " 重複したシンボル名 %s が useDynlib(\"%s\") 中に見つかり
 
 msgid "bad 'S3method' directive: %s"
 msgstr " 誤った 'S3method' 指令です: %s "
-
-msgid "too many 'S3method' directives"
-msgstr " 'S3method' 指令が多すぎます "
 
 msgid "unknown namespace directive: %s"
 msgstr " 未知の名前空間指令です: %s "
@@ -1243,11 +1244,17 @@ msgstr " 'scale' の長さは 'x' の列数に等しくなければなりませ�
 msgid "either specify 'nmax' or 'n', but not both."
 msgstr " 'nmax' か 'n' を指定して下さい。しかし両方はだめです "
 
+msgid "'from' cannot be NA, NaN or infinite"
+msgstr ""
+
 msgid "argument 'length.out' must be of length 1"
 msgstr " 引数 'length.out' は長さ 1 でなければなりません "
 
 msgid "first element used of 'length.out' argument"
 msgstr " 最初の要素は 引数 'length.out' として使われます "
+
+msgid "'to' cannot be NA, NaN or infinite"
+msgstr ""
 
 msgid "invalid (to - from)/by in seq(.)"
 msgstr " seq(.) 中の (to - from)/by が不正です "
@@ -1675,6 +1682,9 @@ msgstr[0] " %s は TRUE ではありません "
 msgid "Warning message:\n"
 msgid_plural "Warning messages:\n"
 msgstr[0] " 警告メッセージ: \n"
+
+#~ msgid "too many 'S3method' directives"
+#~ msgstr " 'S3method' 指令が多すぎます "
 
 #~ msgid "non-square matrix in 'chol'"
 #~ msgstr " 'chol' に非正方行列が指定されています "

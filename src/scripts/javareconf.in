@@ -147,10 +147,10 @@ fi
 javac_works='not present'
 if test -n "$JAVAC"; then
     javac_works='not functional'
-    echo "public class A { }" > ${tempdir}/A.java
-    if test -f ${tempdir}/A.java; then
-	if "${JAVAC}" ${tempdir}/A.java >/dev/null; then
-           if test -f ${tempdir}/A.class; then
+    echo "public class A { }" > "${tempdir}/A.java"
+    if test -f "${tempdir}/A.java"; then
+	if "${JAVAC}" "${tempdir}/A.java" >/dev/null; then
+           if test -f "${tempdir}/A.class"; then
 		javac_works=yes
 	    fi
 	fi
@@ -244,8 +244,15 @@ if test "${JAVA_LIBS}" = "~autodetect~"; then
 	fi	
 	IFS=${save_IFS}
 	# replace occurrences of JAVA_HOME with $(JAVA_HOME)
-	JAVA_LD_LIBRARY_PATH=`echo "${java_library_path}" | ${SED-sed} -e" s:${JAVA_HOME}:\$\(JAVA_HOME\):g"`
-	
+	# If JAVA_HOME was a link, it will be the canonical path we
+	# want to replace.  We need realpath to determine what that is.
+	if test "@REALPATH@" != "false"; then
+             java_home=`@REALPATH@ "${JAVA_HOME}"`
+	else
+       	    java_home="${JAVA_HOME}"
+	fi
+	JAVA_LD_LIBRARY_PATH=`echo "${java_library_path}" | ${SED-sed} -e" s:${java_home}:\$\(JAVA_HOME\):g"`
+
 	LD_LIBRARY_PATH=${save_LDLP}
 	export LD_LIBRARY_PATH
 	# build JAVA_LIBS from the detected path
@@ -317,7 +324,7 @@ fi
 
 ## Do cpmpile test in the temporary dir
 wd=${PWD}
-cd ${tempdir}
+cd "${tempdir}"
 
 echo
 echo "trying to compile and link a JNI progam "
@@ -354,14 +361,15 @@ fi
 
 rm -f conftest.c conftest.o conftest.so Makevars
 cd ${wd}
-rm -rf ${tempdir}
+rm -rf "${tempdir}"
 
 
 echo ""
 
 if test "${export_vars}" = yes; then
-    ## we have to re-substitute $(JAVA_HOME), otherwise it will be replaced by R's
-    ## Makeconf setting which is highly likely different and thus not intended
+    ## we have to re-substitute $(JAVA_HOME), 
+    ## otherwise it will be replaced by R's Makeconf setting
+    ## which is highly likely different and thus not intended
     JAVA_LD_LIBRARY_PATH=`echo ${JAVA_LD_LIBRARY_PATH}|${SED-sed} -e 's:$(JAVA_HOME):'"${JAVA_HOME}:g"`
     JAVA_CPPFLAGS=`echo ${JAVA_CPPFLAGS}|${SED-sed} -e 's:$(JAVA_HOME):'"${JAVA_HOME}:g"`
     JAVA_LIBS=`echo ${JAVA_LIBS}|${SED-sed} -e 's:$(JAVA_HOME):'"${JAVA_HOME}:g"`
@@ -377,6 +385,7 @@ if test "${export_vars}" = yes; then
 fi
 
 echo ""
+echo "JAVA_HOME        : ${JAVA_HOME}"
 echo "Java library path: ${JAVA_LD_LIBRARY_PATH}"
 echo "JNI cpp flags    : ${JAVA_CPPFLAGS}"
 echo "JNI linker flags : ${JAVA_LIBS}"
@@ -405,3 +414,8 @@ done
 
 echo "Done."
 echo ''
+
+### Local Variables: ***
+### mode: sh ***
+### sh-indentation: 2 ***
+### End: ***

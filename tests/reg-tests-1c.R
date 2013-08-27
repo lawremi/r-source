@@ -73,4 +73,115 @@ try ( k. <- kmeans(r., 3) ) # after rounding, have only two distinct points
       k. <- kmeans(r., 2)   # fine
 
 
+## regression test incorrectly in example(NA)
+xx <- c(0:4)
+is.na(xx) <- c(2, 4)
+LL <- list(1:5, c(NA, 5:8), c("A","NA"), c("a", NA_character_))
+L2 <- LL[c(1,3)]
+dN <- dd <- USJudgeRatings; dN[3,6] <- NA
+stopifnot(anyNA(xx), anyNA(LL), !anyNA(L2),
+          anyNA(dN), !anyNA(dd), !any(is.na(dd)),
+          all(c(3,6) == which(is.na(dN), arr.ind=TRUE)))
+
+## PR#15376
+stem(c(1, Inf))
+## hung in 3.0.1
+
+
+## PR#15377, very long variable names
+x <- 1:10
+y <- x + rnorm(10)
+z <- y + rnorm(10)
+yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy <- y
+fit <- lm(cbind(yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy, z) ~ x)
+## gave spurious error message in 3.0.1.
+
+## PR#15341 singular complex matrix in rcond()
+set.seed(11)
+n <- 5
+A <- matrix(runif(n*n),nrow=n)
+B <- matrix(runif(n*n),nrow=n)
+B[n,] <- (B[n-1,]+B[n-2,])/2
+rcond(B)
+B <- B + 0i
+rcond(B)
+## gave error message (OK) in R 3.0.1: now returns 0 as in real case.
+
+
+## Misuse of formatC as in PR#15303
+days <- as.Date(c("2012-02-02", "2012-03-03", "2012-05-05"))
+(z <- formatC(days))
+stopifnot(!is.object(z), is.null(oldClass(z)))
+## used to copy over class in R < 3.0.2.
+
+
+## PR15219
+val <- sqrt(pi)
+fun <- function(x) (-log(x))^(-1/2)
+(res <- integrate(fun, 0, 1, rel.tol = 1e-4))
+stopifnot(abs(res$value - val) < res$abs.error)
+(res <- integrate(fun, 0, 1, rel.tol = 1e-6))
+stopifnot(abs(res$value - val) < res$abs.error)
+res <- integrate(fun, 0, 1, rel.tol = 1e-8)
+stopifnot(abs(res$value - val) < res$abs.error)
+
+fun <- function(x) x^(-1/2)*exp(-x)
+(res <- integrate(fun, 0, Inf, rel.tol = 1e-4))
+stopifnot(abs(res$value - val) < res$abs.error)
+(res <- integrate(fun, 0, Inf, rel.tol = 1e-6))
+stopifnot(abs(res$value - val) < res$abs.error)
+(res <- integrate(fun, 0, Inf, rel.tol = 1e-8))
+stopifnot(abs(res$value - val) < res$abs.error)
+## sometimes exceeded reported error in 2.12.0 - 3.0.1
+
+
+## Unary + should coerce
+x <- c(TRUE, FALSE, NA, TRUE)
+stopifnot(is.integer(+x))
+## +x was logical in R <= 3.0.1
+
+
+## Attritbutes of value of unary operators
+# +x, -x were ts, !x was not in 3.0.2
+x <- ts(c(a=TRUE, b=FALSE, c=NA, d=TRUE), frequency = 4, start = 2000)
+x; +x; -x; !x
+stopifnot(is.ts(!x), !is.ts(+x), !is.ts(-x))
+# +x, -x were ts, !x was not in 3.0.2
+x <- ts(c(a=1, b=2, c=0, d=4), frequency = 4, start = 2010)
+x; +x; -x; !x
+stopifnot(!is.ts(!x), is.ts(+x), is.ts(-x))
+##
+
+
+## regression test incorrectly in colorRamp.Rd
+bb <- colorRampPalette(2)(4)
+stopifnot(bb[1] == bb)
+## special case, invalid in R <= 2.15.0:
+
+
+## Setting NAMED on ... arguments
+f <- function(...) { x <- (...); x[1] <- 7; (...) }
+stopifnot(f(1+2) == 3)
+## was 7 in 3.0.1
+
+
+## copying attributes from only one arg of a binary operator.
+A <- array(c(1), dim = c(1L,1L), dimnames = list("a", 1))
+x <- c(a = 1)
+B <- A/(pi*x)
+stopifnot(is.null(names(B)))
+## was wrong in R-devel in Aug 2013
+## needed an un-NAMED rhs.
+
+
+## lgamma(x) for very small negative x
+X <- 3e-308; stopifnot(identical(lgamma(-X), lgamma(X)))
+## lgamma(-X) was NaN in R <= 3.0.1
+
+
+## PR#15413
+z <- subset(data.frame(one = numeric()), select = one)
+stopifnot(nrow(z) == 0L)
+## created a row prior to 3.0.2
+
 proc.time()

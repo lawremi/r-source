@@ -122,9 +122,9 @@ void attribute_hidden R_run_onexits(RCNTXT *cptr)
     RCNTXT *c;
 
     for (c = R_GlobalContext; c != cptr; c = c->nextcontext) {
+        // a user embedding R incorrectly triggered this (PR#15420)
 	if (c == NULL)
-	    error(_("bad target context--should NEVER happen;\n\
-please bug.report() [R_run_onexits]"));
+	    error("bad target context--should NEVER happen if R was called correctly");
 	if (c->cend != NULL) {
 	    void (*cend)(void *) = c->cend;
 	    c->cend = NULL; /* prevent recursion */
@@ -240,8 +240,10 @@ void begincontext(RCNTXT * cptr, int flags,
 #ifdef BC_INT_STACK
     cptr->intstack = R_BCIntStackTop;
 #endif
-    cptr->srcref = R_Srcref;
+    cptr->srcref = R_Srcref;    
+    cptr->browserfinish = R_GlobalContext->browserfinish;
     cptr->nextcontext = R_GlobalContext;
+
     R_GlobalContext = cptr;
 }
 

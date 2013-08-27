@@ -42,6 +42,10 @@
  *  "value" slot is inspected for a value.  This "top-level"
  *  environment is where system functions and variables reside.
  *
+ *  Environments with the NO_SPECIAL_SYMBOLS flag set are known to not
+ *  contain any special symbols, as indicated by the IS_SPECIAL_SYMBOL
+ *  macro.  Lookup for such a symbol can then bypass this environment
+ *  without searching it.
  */
 
 /* R 1.8.0: namespaces are no longer experimental, so the following
@@ -90,6 +94,9 @@
 #include <Defn.h>
 #include <Internal.h>
 #include <R_ext/Callbacks.h>
+
+#define FAST_BASE_CACHE_LOOKUP  /* Define to enable fast lookups of symbols */
+                                /*    in global cache from base environment */
 
 #define IS_USER_DATABASE(rho)  OBJECT((rho)) && inherits((rho), "UserDefinedDatabase")
 
@@ -150,6 +157,21 @@ static SEXP getActiveValue(SEXP fun)
 
 /* Macro version of isNull for only the test against R_NilValue */
 #define ISNULL(x) ((x) == R_NilValue)
+
+/* Function to determine whethr an environment contains special symbols */
+Rboolean R_envHasNoSpecialSymbols (SEXP env)
+{
+    SEXP frame;
+   
+    if (HASHTAB(env) != R_NilValue)
+	return FALSE;
+
+    for (frame = FRAME(env); frame != R_NilValue; frame = CDR(frame))
+        if (IS_SPECIAL_SYMBOL(TAG(frame)))
+            return FALSE;
+
+    return TRUE;
+}
 
 /*----------------------------------------------------------------------
 
@@ -590,6 +612,12 @@ static SEXP R_HashProfile(SEXP table)
    created in a global frame or if the variable is removed from any
    global frame.
 
+   Symbols in the global cache with values from the base environment
+   are flagged with BASE_SYM_CACHED, so that their value can be
+   returned immediately without needing to look in the hash table.
+   They must still have entries in the hash table, however, so that
+   they can be flushed as needed.
+
    To make sure the cache is valid, all binding creations and removals
    from global frames must go through the interface functions in this
    file.
@@ -632,6 +660,7 @@ void attribute_hidden InitBaseEnv()
 void attribute_hidden InitGlobalEnv()
 {
     R_GlobalEnv = R_NewHashedEnv(R_BaseEnv, ScalarInteger(0));
+    R_MethodsNamespace = R_GlobalEnv; // so it is initialized.
 #ifdef NEW_CODE /* Not used */
     HASHTAB(R_GlobalEnv) = R_NewHashTable(100);
 #endif
@@ -667,8 +696,12 @@ static void R_FlushGlobalCache(SEXP sym)
 {
     SEXP entry = R_HashGetLoc(hashIndex(sym, R_GlobalCache), sym,
 			      R_GlobalCache);
-    if (entry != R_NilValue)
+    if (entry != R_NilValue) {
 	SETCAR(entry, R_UnboundValue);
+#ifdef FAST_BASE_CACHE_LOOKUP
+        UNSET_BASE_SYM_CACHED(sym);
+#endif
+    }
 }
 
 static void R_FlushGlobalCacheFromTable(SEXP table)
@@ -704,6 +737,12 @@ static void R_AddGlobalCache(SEXP symbol, SEXP place)
     int oldpri = HASHPRI(R_GlobalCache);
     R_HashSet(hashIndex(symbol, R_GlobalCache), symbol, R_GlobalCache, place,
 	      FALSE);
+#ifdef FAST_BASE_CACHE_LOOKUP
+    if (symbol == place)
+	SET_BASE_SYM_CACHED(symbol);
+    else
+	UNSET_BASE_SYM_CACHED(symbol);
+#endif
     if (oldpri != HASHPRI(R_GlobalCache) &&
 	HASHPRI(R_GlobalCache) > 0.85 * HASHSIZE(R_GlobalCache)) {
 	R_GlobalCache = R_HashResize(R_GlobalCache);
@@ -713,7 +752,14 @@ static void R_AddGlobalCache(SEXP symbol, SEXP place)
 
 static SEXP R_GetGlobalCache(SEXP symbol)
 {
-    SEXP vl = R_HashGet(hashIndex(symbol, R_GlobalCache), symbol,
+    SEXP vl;
+
+#ifdef FAST_BASE_CACHE_LOOKUP
+    if (BASE_SYM_CACHED(symbol))
+        return SYMBOL_BINDING_VALUE(symbol);
+#endif
+
+    vl = R_HashGet(hashIndex(symbol, R_GlobalCache), symbol,
 			R_GlobalCache);
     switch(TYPEOF(vl)) {
     case SYMSXP:
@@ -1306,11 +1352,26 @@ SEXP dynamicfindVar(SEXP symbol, RCNTXT *cptr)
 SEXP findFun(SEXP symbol, SEXP rho)
 {
     SEXP vl;
+
+    /* If the symbol is marked as special, skip to the first
+       environment that might contain such a symbol. */
+    if (IS_SPECIAL_SYMBOL(symbol)) {
+        while (rho != R_EmptyEnv && NO_SPECIAL_SYMBOLS(rho))
+            rho = ENCLOS(rho);
+    }
+
     while (rho != R_EmptyEnv) {
 	/* This is not really right.  Any variable can mask a function */
 #ifdef USE_GLOBAL_CACHE
 	if (rho == R_GlobalEnv)
+#ifdef FAST_BASE_CACHE_LOOKUP
+            if (BASE_SYM_CACHED(symbol))
+                vl = SYMBOL_BINDING_VALUE(symbol);
+            else
+                vl = findGlobalVar(symbol);
+#else
 	    vl = findGlobalVar(symbol);
+#endif
 	else
 	    vl = findVarInFrame3(rho, symbol, TRUE);
 #else
@@ -1374,6 +1435,10 @@ void defineVar(SEXP symbol, SEXP value, SEXP rho)
 #ifdef USE_GLOBAL_CACHE
 	if (IS_GLOBAL_FRAME(rho)) R_FlushGlobalCache(symbol);
 #endif
+
+        if (IS_SPECIAL_SYMBOL(symbol))
+            UNSET_NO_SPECIAL_SYMBOLS(rho);
+
 	if (HASHTAB(rho) == R_NilValue) {
 	    /* First check for an existing binding */
 	    frame = FRAME(rho);
@@ -1542,7 +1607,7 @@ SEXP attribute_hidden do_assign(SEXP call, SEXP op, SEXP args, SEXP rho)
     else {
 	if (length(CAR(args)) > 1)
 	    warning(_("only the first element is used as variable name"));
-	name = install(translateChar(STRING_ELT(CAR(args), 0)));
+	name = installTrChar(STRING_ELT(CAR(args), 0));
     }
     PROTECT(val = CADR(args));
     aenv = CADDR(args);
@@ -1584,7 +1649,7 @@ SEXP attribute_hidden do_list2env(SEXP call, SEXP op, SEXP args, SEXP rho)
 	error(_("'envir' argument must be an environment"));
 
     for(int i = 0; i < LENGTH(x) ; i++) {
-	SEXP name = install(translateChar(STRING_ELT(xnms, i)));
+	SEXP name = installTrChar(STRING_ELT(xnms, i));
 	defineVar(name, VECTOR_ELT(x, i), envir);
     }
 
@@ -1683,7 +1748,7 @@ SEXP attribute_hidden do_remove(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     for (i = 0; i < LENGTH(name); i++) {
 	done = 0;
-	tsym = install(translateChar(STRING_ELT(name, i)));
+	tsym = installTrChar(STRING_ELT(name, i));
 	if( !HASHASH(PRINTNAME(tsym)) )
 	    hashcode = R_Newhashpjw(CHAR(PRINTNAME(tsym)));
 	else
@@ -1730,7 +1795,7 @@ SEXP attribute_hidden do_get(SEXP call, SEXP op, SEXP args, SEXP rho)
     if (!isValidStringF(CAR(args)))
 	error(_("invalid first argument"));
     else
-	t1 = install(translateChar(STRING_ELT(CAR(args), 0)));
+	t1 = installTrChar(STRING_ELT(CAR(args), 0));
 
     /* envir :	originally, the "where=" argument */
 
@@ -1992,7 +2057,7 @@ SEXP attribute_hidden do_missing(SEXP call, SEXP op, SEXP args, SEXP rho)
     check1arg(args, call, "x");
     s = sym = CAR(args);
     if( isString(sym) && length(sym)==1 )
-	s = sym = install(translateChar(STRING_ELT(CAR(args), 0)));
+	s = sym = installTrChar(STRING_ELT(CAR(args), 0));
     if (!isSymbol(sym))
 	errorcall(call, _("invalid use of 'missing'"));
 
@@ -2744,6 +2809,7 @@ SEXP attribute_hidden do_pos2env(SEXP call, SEXP op, SEXP args, SEXP rho)
 static SEXP matchEnvir(SEXP call, const char *what)
 {
     SEXP t, name;
+    const void *vmax = vmaxget();
     if(!strcmp(".GlobalEnv", what))
 	return R_GlobalEnv;
     if(!strcmp("package:base", what))
@@ -2751,10 +2817,14 @@ static SEXP matchEnvir(SEXP call, const char *what)
     for (t = ENCLOS(R_GlobalEnv); t != R_EmptyEnv ; t = ENCLOS(t)) {
 	name = getAttrib(t, R_NameSymbol);
 	if(isString(name) && length(name) > 0 &&
-	   !strcmp(translateChar(STRING_ELT(name, 0)), what))
+	   !strcmp(translateChar(STRING_ELT(name, 0)), what)) {
+	    vmaxset(vmax);
 	    return t;
+	}
     }
     errorcall(call, _("no item called \"%s\" on the search list"), what);
+    /* not reached */
+    vmaxset(vmax);
     return R_NilValue;
 }
 
@@ -3211,7 +3281,7 @@ static SEXP checkNSname(SEXP call, SEXP name)
 	break;
     case STRSXP:
 	if (LENGTH(name) >= 1) {
-	    name = install(translateChar(STRING_ELT(name, 0)));
+	    name = installTrChar(STRING_ELT(name, 0));
 	    break;
 	}
 	/* else fall through */
@@ -3300,8 +3370,8 @@ SEXP attribute_hidden do_importIntoEnv(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     n = LENGTH(impnames);
     for (i = 0; i < n; i++) {
-	impsym = install(translateChar(STRING_ELT(impnames, i)));
-	expsym = install(translateChar(STRING_ELT(expnames, i)));
+	impsym = installTrChar(STRING_ELT(impnames, i));
+	expsym = installTrChar(STRING_ELT(expnames, i));
 
 	/* find the binding--may be a CONS cell or a symbol */
 	SEXP binding = R_NilValue;

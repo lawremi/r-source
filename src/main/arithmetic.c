@@ -299,6 +299,7 @@ static double logbase(double x, double base)
 
 SEXP R_unary(SEXP, SEXP, SEXP);
 SEXP R_binary(SEXP, SEXP, SEXP, SEXP);
+static SEXP logical_unary(ARITHOP_TYPE, SEXP, SEXP);
 static SEXP integer_unary(ARITHOP_TYPE, SEXP, SEXP);
 static SEXP real_unary(ARITHOP_TYPE, SEXP, SEXP);
 static SEXP real_binary(ARITHOP_TYPE, SEXP, SEXP);
@@ -309,24 +310,241 @@ static int naflag;
 static SEXP lcall;
 #endif
 
+/* Integer arithmetic support */
+
+/* The tests using integer comparisons are a bit faster than the tests
+   using doubles, but they depend on a two's complement representation
+   (but that is almost universal).  The tests that compare results to
+   double's depend on being able to accurately represent all int's as
+   double's.  Since int's are almost universally 32 bit that should be
+   OK. */
+
+#ifndef INT_32_BITS
+/* configure checks whether int is 32 bits.  If not this code will
+   need to be rewritten.  Since 32 bit ints are pretty much universal,
+   we can worry about writing alternate code when the need arises.
+   To be safe, we signal a compiler error if int is not 32 bits. */
+# error code requires that int have 32 bits
+#else
+/* Just to be on the safe side, configure ought to check that the
+   mashine uses two's complement. A define like
+#define USES_TWOS_COMPLEMENT (~0 == (unsigned) -1)
+   might work, but at least one compiler (CodeWarrior 6) chokes on it.
+   So for now just assume it is true.
+*/
+#define USES_TWOS_COMPLEMENT 1
+
+#if USES_TWOS_COMPLEMENT
+# define OPPOSITE_SIGNS(x, y) ((x < 0) ^ (y < 0))
+# define GOODISUM(x, y, z) (((x) > 0) ? ((y) < (z)) : ! ((y) < (z)))
+# define GOODIDIFF(x, y, z) (!(OPPOSITE_SIGNS(x, y) && OPPOSITE_SIGNS(x, z)))
+#else
+# define GOODISUM(x, y, z) ((double) (x) + (double) (y) == (z))
+# define GOODIDIFF(x, y, z) ((double) (x) - (double) (y) == (z))
+#endif
+#define GOODIPROD(x, y, z) ((double) (x) * (double) (y) == (z))
+#define INTEGER_OVERFLOW_WARNING _("NAs produced by integer overflow")
+#endif
+
+#define CHECK_INTEGER_OVERFLOW(call, ans, naflag) do {		\
+	if (naflag) {						\
+	    PROTECT(ans);					\
+	    warningcall(call, INTEGER_OVERFLOW_WARNING);	\
+	    UNPROTECT(1);					\
+	}							\
+    } while(0)
+
+static R_INLINE int R_integer_plus(int x, int y, Rboolean *pnaflag)
+{
+    if (x == NA_INTEGER || y == NA_INTEGER)
+	return NA_INTEGER;
+    else {
+	int z = x + y;
+	if (GOODISUM(x, y, z) && z != NA_INTEGER)
+	    return z;
+	else {
+	    if (pnaflag != NULL)
+		*pnaflag = TRUE;
+	    return NA_INTEGER;
+	}
+    }    
+}
+
+static R_INLINE int R_integer_minus(int x, int y, Rboolean *pnaflag)
+{
+    if (x == NA_INTEGER || y == NA_INTEGER)
+	return NA_INTEGER;
+    else {
+	int z = x - y;
+	if (GOODIDIFF(x, y, z) && z != NA_INTEGER)
+	    return z;
+	else {
+	    if (pnaflag != NULL)
+		*pnaflag = TRUE;
+	    return NA_INTEGER;
+	}
+    }
+}
+
+static R_INLINE int R_integer_times(int x, int y, Rboolean *pnaflag)
+{
+    if (x == NA_INTEGER || y == NA_INTEGER)
+	return NA_INTEGER;
+    else {
+	int z = x * y;
+	if (GOODIPROD(x, y, z) && z != NA_INTEGER)
+	    return z;
+	else {
+	    if (pnaflag != NULL)
+		*pnaflag = TRUE;
+	    return NA_INTEGER;
+	}
+    }
+}
+
+static R_INLINE double R_integer_divide(int x, int y)
+{
+    if (x == NA_INTEGER || y == NA_INTEGER)
+	return NA_REAL;
+    else
+	return (double) x / (double) y;
+}    
+
+static R_INLINE SEXP ScalarValue1(SEXP x)
+{
+    if (NAMED(x) == 0)
+	return x;
+    else
+	return allocVector(TYPEOF(x), 1);
+}
+
+static R_INLINE SEXP ScalarValue2(SEXP x, SEXP y)
+{
+    if (NAMED(x) == 0)
+	return x;
+    else if (NAMED(y) == 0)
+	return y;
+    else
+	return allocVector(TYPEOF(x), 1);
+}
 
 /* Unary and Binary Operators */
 
 SEXP attribute_hidden do_arith(SEXP call, SEXP op, SEXP args, SEXP env)
 {
-    SEXP ans;
+    SEXP ans, arg1, arg2;
+    int argc;
 
-    if (DispatchGroup("Ops", call, op, args, env, &ans))
-	return ans;
+    if (args == R_NilValue)
+	argc = 0;
+    else if (CDR(args) == R_NilValue)
+	argc = 1;
+    else if (CDDR(args) == R_NilValue)
+	argc = 2;
+    else
+	argc = length(args);
+    arg1 = CAR(args);
+    arg2 = CADR(args);
 
-    switch (length(args)) {
-    case 1:
-	return R_unary(call, op, CAR(args));
-    case 2:
-	return R_binary(call, op, CAR(args), CADR(args));
-    default:
-	errorcall(call,_("operator needs one or two arguments"));
+    if (ATTRIB(arg1) != R_NilValue || ATTRIB(arg2) != R_NilValue) {
+	if (DispatchGroup("Ops", call, op, args, env, &ans))
+	    return ans;
     }
+    else if (argc == 2) {
+	/* Handle some scaler operations immediately */
+	if (IS_SCALAR(arg1, REALSXP)) {
+	    if (IS_SCALAR(arg2, REALSXP)) {
+		double x1 = REAL(arg1)[0];
+		double x2 = REAL(arg2)[0];
+		ans = ScalarValue2(arg1, arg2);
+		switch (PRIMVAL(op)) {
+		case PLUSOP: REAL(ans)[0] = x1 + x2; return ans;
+		case MINUSOP: REAL(ans)[0] = x1 - x2; return ans;
+		case TIMESOP: REAL(ans)[0] = x1 * x2; return ans;
+		case DIVOP: REAL(ans)[0] = x1 / x2; return ans;
+		}
+	    }
+	    else if (IS_SCALAR(arg2, INTSXP)) {
+		double x1 = REAL(arg1)[0];
+		double x2 = INTEGER(arg2)[0] != NA_INTEGER ?
+		    (double) INTEGER(arg2)[0] : NA_REAL;
+		ans = ScalarValue1(arg1);
+		switch (PRIMVAL(op)) {
+		case PLUSOP: REAL(ans)[0] = x1 + x2; return ans;
+		case MINUSOP: REAL(ans)[0] = x1 - x2; return ans;
+		case TIMESOP: REAL(ans)[0] = x1 * x2; return ans;
+		case DIVOP: REAL(ans)[0] = x1 / x2; return ans;
+		}
+	    }
+	}
+	else if (IS_SCALAR(arg1, INTSXP)) {
+	    if (IS_SCALAR(arg2, REALSXP)) {
+		double x1 = INTEGER(arg1)[0] != NA_INTEGER ?
+		    (double) INTEGER(arg1)[0] : NA_REAL;
+		double x2 = REAL(arg2)[0];
+		ans = ScalarValue1(arg2);
+		switch (PRIMVAL(op)) {
+		case PLUSOP: REAL(ans)[0] = x1 + x2; return ans;
+		case MINUSOP: REAL(ans)[0] = x1 - x2; return ans;
+		case TIMESOP: REAL(ans)[0] = x1 * x2; return ans;
+		case DIVOP: REAL(ans)[0] = x1 / x2; return ans;
+		}
+	    }
+	    else if (IS_SCALAR(arg2, INTSXP)) {
+		Rboolean naflag = FALSE;
+		int x1 = INTEGER(arg1)[0];
+		int x2 = INTEGER(arg2)[0];
+		switch (PRIMVAL(op)) {
+		case PLUSOP:
+		    ans = ScalarValue2(arg1, arg2);
+		    INTEGER(ans)[0] = R_integer_plus(x1, x2, &naflag);
+		    CHECK_INTEGER_OVERFLOW(call, ans, naflag);
+		    return ans;
+		case MINUSOP:
+		    ans = ScalarValue2(arg1, arg2);
+		    INTEGER(ans)[0] = R_integer_minus(x1, x2, &naflag);
+		    CHECK_INTEGER_OVERFLOW(call, ans, naflag);
+		    return ans;
+		case TIMESOP:
+		    ans = ScalarValue2(arg1, arg2);
+		    INTEGER(ans)[0] = R_integer_times(x1, x2, &naflag);
+		    CHECK_INTEGER_OVERFLOW(call, ans, naflag);
+		    return ans;
+		case DIVOP:
+		    ans = ScalarReal(R_integer_divide(x1, x2));
+		    return ans;
+		}
+	    }
+	}
+    }
+    else if (argc == 1) {
+	if (IS_SCALAR(arg1, REALSXP)) {
+	    switch(PRIMVAL(op)) {
+	    case PLUSOP: return(arg1);
+	    case MINUSOP:
+		ans = ScalarValue1(arg1);
+		REAL(ans)[0] = -REAL(arg1)[0];
+		return ans;
+	    }
+	}
+	else if (IS_SCALAR(arg1, INTSXP)) {
+	    switch(PRIMVAL(op)) {
+	    case PLUSOP: return(arg1);
+	    case MINUSOP:
+		ans = ScalarValue1(arg1);
+		INTEGER(ans)[0] = INTEGER(arg1)[0] == NA_INTEGER ?
+		    NA_INTEGER : -INTEGER(arg1)[0];
+		return ans;
+	    }
+	}
+    }
+
+    if (argc == 2)
+	return R_binary(call, op, arg1, arg2);
+    else if (argc == 1)
+	return R_unary(call, op, arg1);
+    else
+	errorcall(call,_("operator needs one or two arguments"));
     return ans;			/* never used; to keep -Wall happy */
 }
 
@@ -478,12 +696,10 @@ SEXP attribute_hidden R_binary(SEXP call, SEXP op, SEXP x, SEXP y)
 	val = complex_binary(oper, x, y);
     }
     else if (TYPEOF(x) == REALSXP || TYPEOF(y) == REALSXP) {
-	if(!(TYPEOF(x) == INTSXP || TYPEOF(y) == INTSXP
-	     /* || TYPEOF(x) == LGLSXP || TYPEOF(y) == LGLSXP*/)) {
-	    /* Can get a LGLSXP. In base-Ex.R on 24 Oct '06, got 8 of these. */
-	    COERCE_IF_NEEDED(x, REALSXP, xpi);
-	    COERCE_IF_NEEDED(y, REALSXP, ypi);
-	}
+	/* real_binary can handle REALSXP or INTSXP operand, but not LGLSXP. */
+	/* Can get a LGLSXP. In base-Ex.R on 24 Oct '06, got 8 of these. */
+	if (TYPEOF(x) != INTSXP) COERCE_IF_NEEDED(x, REALSXP, xpi);
+	if (TYPEOF(y) != INTSXP) COERCE_IF_NEEDED(y, REALSXP, ypi);
 	val = real_binary(oper, x, y);
     }
     else val = integer_binary(oper, x, y, lcall);
@@ -511,9 +727,9 @@ SEXP attribute_hidden R_binary(SEXP call, SEXP op, SEXP x, SEXP y)
 	}
     }
     else {
-	if (xlength(val) == xlength(xnames))
+	if (XLENGTH(val) == xlength(xnames))
 	    setAttrib(val, R_NamesSymbol, xnames);
-	else if (xlength(val) == xlength(ynames))
+	else if (XLENGTH(val) == xlength(ynames))
 	    setAttrib(val, R_NamesSymbol, ynames);
     }
 
@@ -534,6 +750,7 @@ SEXP attribute_hidden R_unary(SEXP call, SEXP op, SEXP s1)
     ARITHOP_TYPE operation = (ARITHOP_TYPE) PRIMVAL(op);
     switch (TYPEOF(s1)) {
     case LGLSXP:
+	return logical_unary(operation, s1, call);
     case INTSXP:
 	return integer_unary(operation, s1, call);
     case REALSXP:
@@ -546,6 +763,36 @@ SEXP attribute_hidden R_unary(SEXP call, SEXP op, SEXP s1)
     return s1;			/* never used; to keep -Wall happy */
 }
 
+static SEXP logical_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
+{
+    R_xlen_t n = XLENGTH(s1);
+    SEXP ans = PROTECT(allocVector(INTSXP, n));
+    SEXP names = PROTECT(getAttrib(s1, R_NamesSymbol));
+    SEXP dim = PROTECT(getAttrib(s1, R_DimSymbol));
+    SEXP dimnames = PROTECT(getAttrib(s1, R_DimNamesSymbol));
+    if(names != R_NilValue) setAttrib(ans, R_NamesSymbol, names);
+    if(dim != R_NilValue) setAttrib(ans, R_DimSymbol, dim);
+    if(dimnames != R_NilValue) setAttrib(ans, R_DimNamesSymbol, dimnames);
+    UNPROTECT(3);
+
+    switch (code) {
+    case PLUSOP:
+	for (R_xlen_t  i = 0; i < n; i++) INTEGER(ans)[i] = LOGICAL(s1)[i];
+	break;
+    case MINUSOP:
+	for (R_xlen_t  i = 0; i < n; i++) {
+	    int x = LOGICAL(s1)[i];
+	    INTEGER(ans)[i] = (x == NA_INTEGER) ?
+		NA_INTEGER : ((x == 0.0) ? 0 : -x);
+	}
+	break;
+    default:
+	errorcall(call, _("invalid unary operator"));
+    }
+    UNPROTECT(1);
+    return ans;
+}
+
 static SEXP integer_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
 {
     R_xlen_t i, n;
@@ -556,8 +803,7 @@ static SEXP integer_unary(ARITHOP_TYPE code, SEXP s1, SEXP call)
     case PLUSOP:
 	return s1;
     case MINUSOP:
-	ans = duplicate(s1);
-	SET_TYPEOF(ans, INTSXP);
+	ans = NAMED(s1) == 0 ? s1 : duplicate(s1);
 	n = XLENGTH(s1);
 	for (i = 0; i < n; i++) {
 	    x = INTEGER(s1)[i];
@@ -579,7 +825,7 @@ static SEXP real_unary(ARITHOP_TYPE code, SEXP s1, SEXP lcall)
     switch (code) {
     case PLUSOP: return s1;
     case MINUSOP:
-	ans = duplicate(s1);
+	ans = NAMED(s1) == 0 ? s1 : duplicate(s1);
 	n = XLENGTH(s1);
 	for (i = 0; i < n; i++)
 	    REAL(ans)[i] = -REAL(s1)[i];
@@ -601,40 +847,6 @@ static SEXP real_unary(ARITHOP_TYPE code, SEXP s1, SEXP lcall)
 
 
 
-/* The tests using integer comparisons are a bit faster than the tests
-   using doubles, but they depend on a two's complement representation
-   (but that is almost universal).  The tests that compare results to
-   double's depend on being able to accurately represent all int's as
-   double's.  Since int's are almost universally 32 bit that should be
-   OK. */
-
-#ifndef INT_32_BITS
-/* configure checks whether int is 32 bits.  If not this code will
-   need to be rewritten.  Since 32 bit ints are pretty much universal,
-   we can worry about writing alternate code when the need arises.
-   To be safe, we signal a compiler error if int is not 32 bits. */
-# error code requires that int have 32 bits
-#else
-/* Just to be on the safe side, configure ought to check that the
-   mashine uses two's complement. A define like
-#define USES_TWOS_COMPLEMENT (~0 == (unsigned) -1)
-   might work, but at least one compiler (CodeWarrior 6) chokes on it.
-   So for now just assume it is true.
-*/
-#define USES_TWOS_COMPLEMENT 1
-
-#if USES_TWOS_COMPLEMENT
-# define OPPOSITE_SIGNS(x, y) ((x < 0) ^ (y < 0))
-# define GOODISUM(x, y, z) (((x) > 0) ? ((y) < (z)) : ! ((y) < (z)))
-# define GOODIDIFF(x, y, z) (!(OPPOSITE_SIGNS(x, y) && OPPOSITE_SIGNS(x, z)))
-#else
-# define GOODISUM(x, y, z) ((double) (x) + (double) (y) == (z))
-# define GOODIDIFF(x, y, z) ((double) (x) - (double) (y) == (z))
-#endif
-#define GOODIPROD(x, y, z) ((double) (x) * (double) (y) == (z))
-#define INTEGER_OVERFLOW_WARNING _("NAs produced by integer overflow")
-#endif
-
 static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 {
     R_xlen_t i, i1, i2, n, n1, n2;
@@ -650,8 +862,9 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
     if (code == DIVOP || code == POWOP)
 	ans = allocVector(REALSXP, n);
     else
-	ans = allocVector(INTSXP, n);
-    if (n1 == 0 || n2 == 0) return(ans);
+	ans = R_allocOrReuseVector(s1, s2, INTSXP, n);
+    if (n == 0) return(ans);
+    PROTECT(ans);
 
     switch (code) {
     case PLUSOP:
@@ -659,17 +872,7 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 //	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	    x1 = INTEGER(s1)[i1];
 	    x2 = INTEGER(s2)[i2];
-	    if (x1 == NA_INTEGER || x2 == NA_INTEGER)
-		INTEGER(ans)[i] = NA_INTEGER;
-	    else {
-		int val = x1 + x2;
-		if (val != NA_INTEGER && GOODISUM(x1, x2, val))
-		    INTEGER(ans)[i] = val;
-		else {
-		    INTEGER(ans)[i] = NA_INTEGER;
-		    naflag = TRUE;
-		}
-	    }
+	    INTEGER(ans)[i] = R_integer_plus(x1, x2, &naflag);
 	}
 	if (naflag)
 	    warningcall(lcall, INTEGER_OVERFLOW_WARNING);
@@ -679,17 +882,7 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 //	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	    x1 = INTEGER(s1)[i1];
 	    x2 = INTEGER(s2)[i2];
-	    if (x1 == NA_INTEGER || x2 == NA_INTEGER)
-		INTEGER(ans)[i] = NA_INTEGER;
-	    else {
-		int val = x1 - x2;
-		if (val != NA_INTEGER && GOODIDIFF(x1, x2, val))
-		    INTEGER(ans)[i] = val;
-		else {
-		    naflag = TRUE;
-		    INTEGER(ans)[i] = NA_INTEGER;
-		}
-	    }
+	    INTEGER(ans)[i] = R_integer_minus(x1, x2, &naflag);
 	}
 	if (naflag)
 	    warningcall(lcall, INTEGER_OVERFLOW_WARNING);
@@ -699,17 +892,7 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 //	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	    x1 = INTEGER(s1)[i1];
 	    x2 = INTEGER(s2)[i2];
-	    if (x1 == NA_INTEGER || x2 == NA_INTEGER)
-		INTEGER(ans)[i] = NA_INTEGER;
-	    else {
-		int val = x1 * x2;
-		if (val != NA_INTEGER && GOODIPROD(x1, x2, val))
-		    INTEGER(ans)[i] = val;
-		else {
-		    naflag = TRUE;
-		    INTEGER(ans)[i] = NA_INTEGER;
-		}
-	    }
+	    INTEGER(ans)[i] = R_integer_times(x1, x2, &naflag);
 	}
 	if (naflag)
 	    warningcall(lcall, INTEGER_OVERFLOW_WARNING);
@@ -719,10 +902,7 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 //	    if ((i+1) % NINTERRUPT == 0) R_CheckUserInterrupt();
 	    x1 = INTEGER(s1)[i1];
 	    x2 = INTEGER(s2)[i2];
-	    if (x1 == NA_INTEGER || x2 == NA_INTEGER)
-		    REAL(ans)[i] = NA_REAL;
-		else
-		    REAL(ans)[i] = (double) x1 / (double) x2;
+	    REAL(ans)[i] = R_integer_divide(x1, x2);
 	}
 	break;
     case POWOP:
@@ -765,7 +945,7 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 	}
 	break;
     }
-
+    UNPROTECT(1);
 
     /* quick return if there are no attributes */
     if (ATTRIB(s1) == R_NilValue && ATTRIB(s2) == R_NilValue)
@@ -773,14 +953,10 @@ static SEXP integer_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2, SEXP lcall)
 
     /* Copy attributes from longer argument. */
 
-    if (n1 > n2)
-	copyMostAttrib(s1, ans);
-    else if (n1 == n2) {
+    if (ans != s2 && n == n2 && ATTRIB(s2) != R_NilValue)
 	copyMostAttrib(s2, ans);
-	copyMostAttrib(s1, ans);
-    }
-    else
-	copyMostAttrib(s2, ans);
+    if (ans != s1 && n == n1 && ATTRIB(s1) != R_NilValue)
+	copyMostAttrib(s1, ans); /* Done 2nd so s1's attrs overwrite s2's */
 
     return ans;
 }
@@ -800,7 +976,7 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
     if (n1 == 0 || n2 == 0) return(allocVector(REALSXP, 0));
 
     n = (n1 > n2) ? n1 : n2;
-    PROTECT(ans = allocVector(REALSXP, n));
+    PROTECT(ans = R_allocOrReuseVector(s1, s2, REALSXP, n));
 
     switch (code) {
     case PLUSOP:
@@ -1000,25 +1176,19 @@ static SEXP real_binary(ARITHOP_TYPE code, SEXP s1, SEXP s2)
 	}
 	break;
     }
+    UNPROTECT(1);
 
     /* quick return if there are no attributes */
-    if (ATTRIB(s1) == R_NilValue && ATTRIB(s2) == R_NilValue) {
-	UNPROTECT(1);
+    if (ATTRIB(s1) == R_NilValue && ATTRIB(s2) == R_NilValue)
 	return ans;
-    }
 
     /* Copy attributes from longer argument. */
 
-    if (n1 > n2)
-	copyMostAttrib(s1, ans);
-    else if (n1 == n2) {
+    if (ans != s2 && n == n2 && ATTRIB(s2) != R_NilValue)
 	copyMostAttrib(s2, ans);
-	copyMostAttrib(s1, ans);
-    }
-    else
-	copyMostAttrib(s2, ans);
+    if (ans != s1 && n == n1 && ATTRIB(s1) != R_NilValue)
+	copyMostAttrib(s1, ans); /* Done 2nd so s1's attrs overwrite s2's */
 
-    UNPROTECT(1);
     return ans;
 }
 
@@ -1035,10 +1205,10 @@ static SEXP math1(SEXP sa, double(*f)(double), SEXP lcall)
     if (!isNumeric(sa))
 	errorcall(lcall, R_MSG_NONNUM_MATH);
 
-    n = xlength(sa);
+    n = XLENGTH(sa);
     /* coercion can lose the object bit */
     PROTECT(sa = coerceVector(sa, REALSXP));
-    PROTECT(sy = allocVector(REALSXP, n));
+    PROTECT(sy = NAMED(sa) == 0 ? sa : allocVector(REALSXP, n));
     a = REAL(sa);
     y = REAL(sy);
     naflag = 0;
@@ -1053,7 +1223,8 @@ static SEXP math1(SEXP sa, double(*f)(double), SEXP lcall)
     /* These are primitives, so need to use the call */
     if(naflag) warningcall(lcall, R_MSG_NA);
 
-    DUPLICATE_ATTRIB(sy, sa);
+    if (sa != sy && ATTRIB(sa) != R_NilValue)
+	DUPLICATE_ATTRIB(sy, sa);
     UNPROTECT(2);
     return sy;
 }
@@ -1147,21 +1318,24 @@ SEXP attribute_hidden do_abs(SEXP call, SEXP op, SEXP args, SEXP env)
     if (isInteger(x) || isLogical(x)) {
 	/* integer or logical ==> return integer,
 	   factor was covered by Math.factor. */
-	R_xlen_t i, n = xlength(x);
-	PROTECT(s = allocVector(INTSXP, n));
+	R_xlen_t i, n = XLENGTH(x);
+	s = (NAMED(x) == 0 && TYPEOF(x) == INTSXP) ? x : allocVector(INTSXP, n);
+	PROTECT(s);
 	/* Note: relying on INTEGER(.) === LOGICAL(.) : */
 	for(i = 0 ; i < n ; i++)
 	    INTEGER(s)[i] = abs(INTEGER(x)[i]);
     } else if (TYPEOF(x) == REALSXP) {
-	R_xlen_t i, n = xlength(x);
-	PROTECT(s = allocVector(REALSXP, n));
+	R_xlen_t i, n = XLENGTH(x);
+	PROTECT(s = NAMED(x) == 0 ? x : allocVector(REALSXP, n));
 	for(i = 0 ; i < n ; i++)
 	    REAL(s)[i] = fabs(REAL(x)[i]);
     } else if (isComplex(x)) {
 	return do_cmathfuns(call, op, args, env);
     } else
 	errorcall(call, R_MSG_NONNUM_MATH);
-    DUPLICATE_ATTRIB(s, x);
+
+    if (x != s && ATTRIB(x) != R_NilValue)
+	DUPLICATE_ATTRIB(s, x);
     UNPROTECT(1);
     return s;
 }
@@ -1289,6 +1463,8 @@ static SEXP math2_2(SEXP sa, SEXP sb, SEXP sI1, SEXP sI2,
     return sy;
 } /* math2_2() */
 
+/* This is only used directly by .Internal for Bessel functions,
+   so managing R_alloc stack is only prudence */
 static SEXP math2B(SEXP sa, SEXP sb, double (*f)(double, double, double *),
 		   SEXP lcall)
 {
@@ -1313,6 +1489,7 @@ static SEXP math2B(SEXP sa, SEXP sb, double (*f)(double, double, double *),
 	double av = b[i] < 0 ? -b[i] : b[i];
 	if (av > amax) amax = av;
     }
+    const void *vmax = vmaxget();
     nw = 1 + (long)floor(amax);
     work = (double *) R_alloc((size_t) nw, sizeof(double));
 
@@ -1327,7 +1504,7 @@ static SEXP math2B(SEXP sa, SEXP sb, double (*f)(double, double, double *),
 	}
     }
 
-
+    vmaxset(vmax);
     FINISH_Math2;
 
     return sy;
@@ -1413,19 +1590,13 @@ SEXP attribute_hidden do_Math2(SEXP call, SEXP op, SEXP args, SEXP env)
     SETCDR(call2, args);
 
     n = length(args);
-    switch (n) {
-    case 1:
-    case 2:
-	break;
-    default:
+    if (n != 1 && n != 2)
 	error(_("%d arguments passed to '%s' which requires 1 or 2"),
 	      n, PRIMNAME(op));
-    }
 
     if (! DispatchGroup("Math", call2, op, args, env, &res)) {
 	if(n == 1) {
 	    double digits = 0.0;
-	    check1arg(args, call, "x");
 	    if(PRIMVAL(op) == 10004) digits = 6.0;
 	    SETCDR(args, CONS(ScalarReal(digits), R_NilValue));
 	} else {
@@ -1493,7 +1664,6 @@ SEXP attribute_hidden do_log(SEXP call, SEXP op, SEXP args, SEXP env)
     if (! DispatchGroup("Math", call2, op, args, env, &res)) {
 	switch (n) {
 	case 1:
-	    check1arg(args, call, "x");
 	    if (isComplex(CAR(args)))
 		res = complex_math1(call, op, args, env);
 	    else
@@ -1628,6 +1798,8 @@ static SEXP math3_2(SEXP sa, SEXP sb, SEXP sc, SEXP sI, SEXP sJ,
     return sy;
 } /* math3_2 */
 
+/* This is only used directly by .Internal for Bessel functions,
+   so managing R_alloc stack is only prudence */
 static SEXP math3B(SEXP sa, SEXP sb, SEXP sc,
 		   double (*f)(double, double, double, double *), SEXP lcall)
 {
@@ -1647,6 +1819,7 @@ static SEXP math3B(SEXP sa, SEXP sb, SEXP sc,
 	double av = b[i] < 0 ? -b[i] : b[i];
 	if (av > amax) amax = av;
     }
+    const void *vmax = vmaxget();
     nw = 1 + (long)floor(amax);
     work = (double *) R_alloc((size_t) nw, sizeof(double));
 
@@ -1663,6 +1836,7 @@ static SEXP math3B(SEXP sa, SEXP sb, SEXP sc,
     }
 
     FINISH_Math3;
+    vmaxset(vmax);
 
     return sy;
 } /* math3B */

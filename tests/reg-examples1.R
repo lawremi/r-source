@@ -3,7 +3,7 @@
 set.seed(1)
 if(.Platform$OS.type == "windows") options(pager = "console")
 
-pdf("reg-examples-1.pdf", encoding = "ISOLatin1.enc")
+pdf("reg-examples1.pdf", encoding = "ISOLatin1.enc")
 
 
 ## base
@@ -31,14 +31,25 @@ example(tempfile)
 example(weekdays)
 library(help="splines")
 
+## for example(NA)
+if(require("microbenchmark")) {
+  x <- c(NaN, 1:10000)
+  print(microbenchmark(any(is.na(x)), anyNA(x)))
+} else { ## much less accurate
+  x <- c(NaN, 1e6)
+  nSim <- 2^13
+  print(rbind(is.na = system.time(replicate(nSim, any(is.na(x)))),
+              anyNA = system.time(replicate(nSim, anyNA(x)))))
+}
+
 ## utils
 example(news)
-example(packageDescription)
 example(sessionInfo)
 
 ## datasets
 example(JohnsonJohnson)
 example(ability.cov)
+example(npk)
 
 ## grDevices
 if(.Platform$OS.type == "windows") {

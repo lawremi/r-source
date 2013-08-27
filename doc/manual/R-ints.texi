@@ -53,7 +53,8 @@ This manual is for R, version @value{VERSION}.
 This is a guide to the internal structures of @R{} and coding standards for
 the core team working on @R{} itself.
 
-The current version of this document is @value{VERSION}.
+@insertcopying
+
 @end ifnottex
 
 @menu
@@ -233,7 +234,7 @@ struct sxpinfo_struct @{
     unsigned int mark  :  1;  /* @r{mark object as `in use' in GC} */
     unsigned int debug :  1;
     unsigned int trace :  1;
-    unsigned int spare :  1;  /* @r{unused} */
+    unsigned int spare :  1;  /* @r{debug once} */
     unsigned int gcgen :  1;  /* @r{generation for GC} */
     unsigned int gccls :  3;  /* @r{class of node for GC} */
 @};  /*              Tot: 32 */
@@ -249,6 +250,10 @@ single-step mode.
 @findex trace bit
 The @code{trace} bit is used for functions for @code{trace()} and for
 other objects when tracing duplications (see @code{tracemem}).
+
+@findex spare bit
+The @code{spare} bit is used for closures to mark them for one
+time debugging.
 
 @findex named bit
 @findex NAMED
@@ -3905,9 +3910,11 @@ Default: false.
 Should the @file{vign_test} directory be removed if the test is successful?
 Default: true.
 @item _R_CHECK_REPLACING_IMPORTS_
-Should warnings about replacing imports be reported?  These come
-from auto-generated @file{NAMESPACE} files in other packages.
-Default: false.
+Should warnings about replacing imports be reported?  These sometimes come
+from auto-generated @file{NAMESPACE} files in other packages, but most
+often from importing the whole of a namespace rather than using
+@code{importFrom}.
+Default: false (but true for CRAN submission checks).
 @item _R_CHECK_UNSAFE_CALLS_
 Check for calls that appear to tamper with (or allow tampering with)
 already loaded code not from the current package: such calls may well
@@ -4010,6 +4017,24 @@ or defunct functions (including completely removed functions).  Also for
 platform-specific graphics devices.
 Default: false (but true for CRAN submission checks).
 
+@item _R_CHECK_SCREEN_DEVICE_
+If set to @samp{warn}, give a warning if examples etc open a screen
+device.  If set to @samp{stop}, give an error.
+Default: empty (but @samp{stop} for CRAN submission checks).
+
+@item _R_CHECK_WINDOWS_DEVICE_
+If set to @samp{stop}, give an error if a Windows-only device is used in
+example etc.  This is only useful on Windows: the devices do not exist
+elsewhere.
+Default: empty (but @samp{stop} for CRAN submission checks on Windows).
+
+@item _R_CHECK_TOPLEVEL_FILES_
+Report on top-level files in the package sources that are not described
+in `Writing R Extensions' nor are commonly understood (like
+@file{ChangeLog}).  Variations on standard names (e.g.@:
+@file{COPYRIGHT}) are also reported.
+Default: false (but true for CRAN submission checks).
+
 @end vtable
 
 CRAN's submission checks use something like
@@ -4028,6 +4053,9 @@ _R_CHECK_CODE_ATTACH_=TRUE
 _R_CHECK_CODE_DATA_INTO_GLOBALENV_=TRUE
 _R_CHECK_DOT_FIRSTLIB_=TRUE
 _R_CHECK_DEPRECATED_DEFUNCT_=TRUE
+_R_CHECK_REPLACING_IMPORTS_=TRUE
+_R_CHECK_SCREEN_DEVICE_=stop
+_R_CHECK_TOPLEVEL_FILES_=TRUE
 @end example
 
 @noindent

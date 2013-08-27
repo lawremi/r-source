@@ -3,6 +3,8 @@
 #
 #  Copyright (C) 1995-2013 The R Core Team
 #
+# NB: also copyright dates in Usages.
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -168,6 +170,7 @@
             "      --without-keep.source",
             "			use (or not) 'keep.source' for R code",
             "      --byte-compile	byte-compile R code",
+            "      --no-byte-compile	do not byte-compile R code",
             "      --no-test-load	skip test of loading installed package",
             "      --no-clean-on-error	do not remove installed package on error",
             "      --merge-multiarch	multi-arch by merging (from a single tarball only)",
@@ -627,6 +630,9 @@
                                  paste(configure_args, collapse = " "))
                     if (debug) message("configure command: ", sQuote(cmd),
                                        domain = NA)
+                    ## in case the configure script calls SHLIB (some do)
+                    cmd <- paste("_R_SHLIB_BUILD_OBJECTS_SYMBOL_TABLES_=false",
+                                 cmd)
                     res <- system(cmd)
                     if (res) pkgerrmsg("configuration failed", pkg_name)
                 }  else if (file.exists("configure"))
@@ -659,11 +665,28 @@
                 ## maybe even an error?  But installing Fortran-based packages should work
                 warning("R include directory is empty -- perhaps need to install R-devel.rpm or similar", call. = FALSE)
             has_error <- FALSE
-            linkTo <- desc["LinkingTo"]
-            if (!is.na(linkTo)) {
-                lpkgs <- strsplit(linkTo, ",[[:blank:]]*")[[1L]]
-                paths <- find.package(lpkgs, quiet=TRUE)
+            linkTo <- pkgInfo$LinkingTo
+            if (!is.null(linkTo)) {
+                lpkgs <- sapply(linkTo, function(x) x[[1L]])
+                ## we checked that these were all available earlier,
+                ## but be cautious in case this changed.
+                paths <- find.package(lpkgs, quiet = TRUE)
+                bpaths <- basename(paths)
                 if (length(paths)) {
+                    ## check any version requirements
+                    have_vers <-
+                        (vapply(linkTo, length, 1L) > 1L) & lpkgs %in% bpaths
+                    for (z in linkTo[have_vers]) {
+                        p <- z[[1L]]
+                        path <- paths[bpaths %in% p]
+                        current <- readRDS(file.path(path, "Meta", "package.rds"))$DESCRIPTION["Version"]
+                        target <- as.numeric_version(z$version)
+                        if (!do.call(z$op, list(as.numeric_version(current), target)))
+                            stop(gettextf("package %s %s was found, but %s %s is required by %s",
+                                          sQuote(p), current, z$op,
+                                          target, sQuote(pkgname)),
+                                 call. = FALSE, domain = NA)
+                    }
                     clink_cppflags <- paste(paste0('-I"', paths, '/include"'),
                                             collapse = " ")
                     Sys.setenv(CLINK_CPPFLAGS = clink_cppflags)
@@ -1051,8 +1074,9 @@
 
 	## LazyLoading/Compiling
 	if (install_R && dir.exists("R") && length(dir("R"))) {
-            BC <- parse_description_field(desc, "ByteCompile",
-                                          default = byte_compile)
+            BC <- if (!is.na(byte_compile)) byte_compile
+            else
+                parse_description_field(desc, "ByteCompile", default = FALSE)
             rcp <- as.numeric(Sys.getenv("R_COMPILE_PKGS"))
             BC <- BC || (!is.na(rcp) && rcp > 0)
             if (BC) {
@@ -1213,8 +1237,8 @@
     fake <- FALSE
     lazy <- TRUE
     lazy_data <- FALSE
-    byte_compile <- FALSE
-    ## This is not very useful unless R CMD INSTALL reads a startup file
+    byte_compile <- NA # means take from DESCRIPTION file.
+    ## Next is not very useful unless R CMD INSTALL reads a startup file
     lock <- getOption("install.lock", NA) # set for overall or per-package
     pkglock <- FALSE  # set for per-package locking
     libs_only <- FALSE
@@ -1226,8 +1250,6 @@
     test_load <- TRUE
     merge <- FALSE
     dsym <- nzchar(Sys.getenv("PKG_MAKE_DSYM"))
-    ## group.writable <- getOption("group.writable.pkgs",FALSE) ||
-    ##     	       nzchar(Sys.getenv("R_PKG_GROUP_WRITABLE"))
     get_user_libPaths <- FALSE
     data_compress <- TRUE # FALSE (none), TRUE (gzip), 2 (bzip2), 3 (xz)
     resave_data <- FALSE
@@ -1254,7 +1276,7 @@
                 R.version[["major"]], ".",  R.version[["minor"]],
                 " (r", R.version[["svn rev"]], ")\n", sep = "")
             cat("",
-                "Copyright (C) 2000-2010 The R Core Team.",
+                "Copyright (C) 2000-2013 The R Core Team.",
                 "This is free software; see the GNU General Public License version 2",
                 "or later for copying conditions.  There is NO warranty.",
                 sep = "\n")
@@ -1356,10 +1378,10 @@
             keep.source <- FALSE
         } else if (a == "--byte-compile") {
             byte_compile <- TRUE
+        } else if (a == "--no-byte-compile") {
+            byte_compile <- FALSE
         } else if (a == "--dsym") {
             dsym <- TRUE
-        ## } else if (a == "--group-writable") {
-        ##     group.writable <- TRUE
         } else if (substr(a, 1, 1) == "-") {
             message("Warning: unknown option ", sQuote(a), domain = NA)
         } else pkgs <- c(pkgs, a)
@@ -1703,7 +1725,7 @@
                 R.version[["major"]], ".",  R.version[["minor"]],
                 " (r", R.version[["svn rev"]], ")\n", sep = "")
             cat("",
-                "Copyright (C) 2000-2011 The R Core Team.",
+                "Copyright (C) 2000-2013 The R Core Team.",
                 "This is free software; see the GNU General Public License version 2",
                 "or later for copying conditions.  There is NO warranty.",
                 sep = "\n")

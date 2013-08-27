@@ -1,5 +1,5 @@
 
-R Under development (unstable) (2013-07-03 r63163) -- "Unsuffered Consequences"
+R Under development (unstable) (2013-08-10 r63530) -- "Unsuffered Consequences"
 Copyright (C) 2013 The R Foundation for Statistical Computing
 Platform: x86_64-unknown-linux-gnu (64-bit)
 
@@ -3292,7 +3292,9 @@ NULL
 [1] 1
 > dimnames(x) <- list(some=letters[1:5])
 > x[]
-[1] 1 2 3 4 5
+some
+a b c d e 
+1 2 3 4 5 
 > x[2:3]
 some
 b c 
@@ -6400,15 +6402,15 @@ function ()
 > print.function
 function (x, ...)  
  - attr(*, "srcref")=Class 'srcref'  atomic [1:8] 1 19 1 63 19 63 1 1
-  .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x203a0c0> 
+  .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x3b8cec8> 
 > f
 function ()  
  - attr(*, "srcref")=Class 'srcref'  atomic [1:8] 1 17 1 28 17 28 1 1
-  .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x20f5598> 
+  .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x3ab1308> 
  - attr(*, "note")= chr "just a note"
  - attr(*, "yada")=function ()  
   ..- attr(*, "srcref")=Class 'srcref'  atomic [1:8] 2 24 2 48 24 48 2 2
-  .. .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x20f5598> 
+  .. .. ..- attr(*, "srcfile")=Classes 'srcfilecopy', 'srcfile' <environment: 0x3ab1308> 
 > rm(print.function)
 > ## auto-printing and printing differed up to R 2.9.x
 > 
@@ -6558,7 +6560,8 @@ Error in complete.cases(list(), list()) :
 > ## error messages from (C-level) evalList
 > tst <- function(y) { stopifnot(is.numeric(y)); y+ 1 }
 > try(tst())
-Error in is.numeric(y) : 'y' is missing
+Error in stopifnot(is.numeric(y)) : 
+  argument "y" is missing, with no default
 > try(c(1,,2))
 Error in c(1, , 2) : argument 2 is empty
 > ## change in 2.8.0 made these less clear
@@ -6897,10 +6900,10 @@ F-statistic:  4412 on 1 and 6 DF,  p-value: 7.834e-10
 > 
 > 
 > library("methods")# (not needed here)
-> assertCondition <- tools::assertCondition
-> assertCondition( getMethod(ls, "bar", fdef=ls), "error", verbose=TRUE)
+> assertError <- tools::assertError
+> assertError( getMethod(ls, "bar", fdef=ls), verbose=TRUE)
 Asserted error: no generic function found for 'ls'
-> assertCondition( getMethod(show, "bar"),        "error", verbose=TRUE)
+> assertError( getMethod(show, "bar"), verbose=TRUE)
 Asserted error: no method found for function 'show' and signature bar
 > ## R < 2.15.1 gave
 > ##   cannot coerce type 'closure' to vector of type 'character'
@@ -7012,6 +7015,7 @@ $`a.b:c`
 [1] "255 "   "1000 "  "30000 "
 > ## *values* were cutoff when printed
 > 
+> 
 > ## allows deparse limits to be set
 > form <- reallylongnamey ~ reallylongnamex0 + reallylongnamex1 + reallylongnamex2 + reallylongnamex3
 > form
@@ -7027,12 +7031,14 @@ reallylongnamey ~ reallylongnamex0 + reallylongnamex1 +
 > options(op)
 > ## fixed to 60 in R 2.15.x
 > 
+> 
 > ## PR#15179: user defined binary ops were not deparsed properly
 > quote( `%^%`(x, `%^%`(y,z)) )
 x %^% (y %^% z)
 > quote( `%^%`(x) )
 `%^%`(x)
 > ##
+> 
 > 
 > ## Anonymous function calls were not deparsed properly
 > substitute(f(x), list(f = function(x) x + 1))
@@ -7050,6 +7056,7 @@ a[n](x)
 g(y)(x)
 > ## The first three need parens, the last three don't.
 > 
+> 
 > ## PR#15247 : str() on invalid data frame names (where print() works):
 > d <- data.frame(1:3, "B", 4); names(d) <- c("A", "B\xba","C\xabcd")
 > str(d)
@@ -7059,12 +7066,14 @@ g(y)(x)
  $ C«cd: num  4 4 4
 > ## gave an error in R <= 3.0.0
 > 
+> 
 > ## PR#15299 : adding a simple vector to a classed object produced a bad result:
 > 1:2 + table(1:2)
 
 1 2 
 2 3 
 > ## Printed the class attribute in R <= 3.0.0
+> 
 > 
 > ## PR#15311 : regmatches<- mishandled regexpr results.
 >   x <- c('1', 'B', '3')
@@ -7073,6 +7082,7 @@ g(y)(x)
 >   print(x)
 [1] "A" "B" "C"
 > ## Gave a warning and a wrong result up to 3.0.1
+> 
 > 
 > ## Bad warning found by Radford Neal
 >   saveopt <- options(warnPartialMatchDollar=TRUE)
@@ -7083,4 +7093,98 @@ Warning message:
 In pl$ab : partial match of 'ab' to 'abc'
 >   if (!is.null(saveopt[["warnPartialMatchDollar"]])) options(saveopt)
 > ## 'abc' was just ''
+> 
+> 
+> ## seq() with NaN etc inputs now gives explicit error messages
+> try(seq(NaN))
+Error in seq.default(NaN) : 'from' cannot be NA, NaN or infinite
+> try(seq(to = NaN))
+Error in seq.default(to = NaN) : 'to' cannot be NA, NaN or infinite
+> try(seq(NaN, NaN))
+Error in seq.default(NaN, NaN) : 'from' cannot be NA, NaN or infinite
+> try(seq.int(NaN))
+Error in seq.int(NaN) : 'from' cannot be NA, NaN or infinite
+> try(seq.int(to = NaN))
+Error in seq.int(to = NaN) : 'to' cannot be NA, NaN or infinite
+> try(seq.int(NaN, NaN))
+Error in seq.int(NaN, NaN) : 'from' cannot be NA, NaN or infinite
+> ## R 3.0.1 gave messages from ':' or about negative-length vectors.
+> 
+> 
+> ## Some dimnames were lost from 1D arrays: PR#15301
+> x <- array(0:2, dim=3, dimnames=list(d1=LETTERS[1:3]))
+> x
+d1
+A B C 
+0 1 2 
+> x[]
+d1
+A B C 
+0 1 2 
+> x[3:1]
+d1
+C B A 
+2 1 0 
+> x <- array(0, dimnames=list(d1="A"))
+> x
+d1
+A 
+0 
+> x[]
+d1
+A 
+0 
+> x[drop = FALSE]
+d1
+A 
+0 
+> ## lost dimnames in 3.0.1
+> 
+> 
+> ## PR#15396
+> load(file.path(Sys.getenv('SRCDIR'), 'arima.rda'))
+> (f1 <- arima(x, xreg = xreg, order = c(1,1,1), seasonal = c(1,0,1)))
+
+Call:
+arima(x = x, order = c(1, 1, 1), seasonal = c(1, 0, 1), xreg = xreg)
+
+Coefficients:
+          ar1     ma1    sar1     sma1    xreg
+      -0.4791  0.3525  0.9877  -0.8295  0.3574
+s.e.   0.4184  0.4444  0.0331   0.2221  0.7480
+
+sigma^2 estimated as 0.001515:  log likelihood = 162.05,  aic = -312.09
+> (f2 <- arima(diff(x), xreg = diff(xreg), order = c(1,0,1), seasonal = c(1,0,1),
++              include.mean = FALSE))
+
+Call:
+arima(x = diff(x), order = c(1, 0, 1), seasonal = c(1, 0, 1), xreg = diff(xreg), 
+    include.mean = FALSE)
+
+Coefficients:
+          ar1     ma1    sar1     sma1  diff(xreg)
+      -0.4791  0.3526  0.9877  -0.8295      0.3571
+s.e.   0.4162  0.4420  0.0329   0.2210      0.7441
+
+sigma^2 estimated as 0.001499:  log likelihood = 163.79,  aic = -315.58
+> stopifnot(all.equal(coef(f1), coef(f2), tolerance = 1e-3, check.names = FALSE))
+> ## first gave local optim in 3.0.1
+> 
+> ## all.equal always checked the names
+> x <- c(a=1, b=2)
+> y <- c(a=1, d=2)
+> all.equal(x, y, check.names = FALSE)
+[1] TRUE
+> ## failed on mismatched attributes
+> 
+> ## PR#15411, plus digits change
+> format(9992, digits = 3)
+[1] "9992"
+> format(9996, digits = 3)
+[1] "9996"
+> format(0.0002, digits = 0, nsmall = 2)
+[1] "0.00"
+> format(pi*10, digits = 0, nsmall = 1)
+[1] "31.4"
+> ## second added an extra space; 3rd and 4th were not allowed.
 > 

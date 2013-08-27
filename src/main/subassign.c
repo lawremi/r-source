@@ -366,6 +366,28 @@ static int SubassignTypeFix(SEXP *x, SEXP *y, R_xlen_t stretch, int level,
 	return(which);
 }
 
+#ifdef LONG_VECTOR_SUPPORT
+static R_INLINE R_xlen_t gi(SEXP indx, R_xlen_t i)
+{
+    if (TYPEOF(indx) == REALSXP) {
+	double d = REAL(indx)[i];
+	return R_FINITE(d) ? (R_xlen_t) d : NA_INTEGER;
+    } else
+	return INTEGER(indx)[i];
+}
+#else
+#define R_SHORT_LEN_MAX INT_MAX
+static R_INLINE int gi(SEXP indx, R_xlen_t i)
+{
+    if (TYPEOF(indx) == REALSXP) {
+	double d = REAL(indx)[i];
+	if (!R_FINITE(d) || d < -R_SHORT_LEN_MAX || d > R_SHORT_LEN_MAX) return NA_INTEGER;
+	return (int) d;
+    } else
+	return INTEGER(indx)[i];
+}
+#endif
+
 static SEXP DeleteListElements(SEXP x, SEXP which)
 {
     SEXP include, xnew, xnames, xnewnames;
@@ -377,7 +399,7 @@ static SEXP DeleteListElements(SEXP x, SEXP which)
     for (i = 0; i < len; i++)
 	INTEGER(include)[i] = 1;
     for (i = 0; i < lenw; i++) {
-	ii = INTEGER(which)[i];
+	ii = gi(which, i);
 	if (0 < ii  && ii <= len)
 	    INTEGER(include)[ii - 1] = 0;
     }
@@ -414,28 +436,6 @@ static SEXP DeleteListElements(SEXP x, SEXP which)
     return xnew;
 }
 
-#ifdef LONG_VECTOR_SUPPORT
-static R_INLINE R_xlen_t gi(SEXP indx, R_xlen_t i)
-{
-    if (TYPEOF(indx) == REALSXP) {
-	double d = REAL(indx)[i];
-	return R_FINITE(d) ? (R_xlen_t) d : NA_INTEGER;
-    } else
-	return INTEGER(indx)[i];
-}
-#else
-#define R_SHORT_LEN_MAX INT_MAX
-static R_INLINE int gi(SEXP indx, R_xlen_t i)
-{
-    if (TYPEOF(indx) == REALSXP) {
-	double d = REAL(indx)[i];
-	if (!R_FINITE(d) || d < -R_SHORT_LEN_MAX || d > R_SHORT_LEN_MAX) return NA_INTEGER;
-	return (int) d;
-    } else
-	return INTEGER(indx)[i];
-}
-#endif
-
 static R_INLINE SEXP VECTOR_ELT_FIX_NAMED(SEXP y, R_xlen_t i) {
     /* if RHS (container or element) has NAMED > 0 set NAMED = 2.
        Duplicating might be safer/more consistent (PR15098) */
@@ -448,7 +448,7 @@ static R_INLINE SEXP VECTOR_ELT_FIX_NAMED(SEXP y, R_xlen_t i) {
 
 static SEXP VectorAssign(SEXP call, SEXP x, SEXP s, SEXP y)
 {
-    SEXP dim, indx, newnames;
+    SEXP indx, newnames;
     R_xlen_t i, ii, n, nx, ny;
     int iy, which;
     R_xlen_t stretch;
@@ -461,19 +461,21 @@ static SEXP VectorAssign(SEXP call, SEXP x, SEXP s, SEXP y)
     /* Check to see if we have special matrix subscripting. */
     /* If so, we manufacture a real subscript vector. */
 
-    dim = getAttrib(x, R_DimSymbol);
     PROTECT(s);
-    if (isMatrix(s) && isArray(x) && ncols(s) == length(dim)) {
-        if (isString(s)) {
-            s = strmat2intmat(s, GetArrayDimnames(x), call);
-            UNPROTECT(1);
-            PROTECT(s);
-        }
-        if (isInteger(s) || isReal(s)) {
-            s = mat2indsub(dim, s, R_NilValue);
-            UNPROTECT(1);
-            PROTECT(s);
-        }
+    if (ATTRIB(s) != R_NilValue) { /* pretest to speed up simple case */
+	SEXP dim = getAttrib(x, R_DimSymbol);
+	if (isMatrix(s) && isArray(x) && ncols(s) == length(dim)) {
+	    if (isString(s)) {
+		s = strmat2intmat(s, GetArrayDimnames(x), call);
+		UNPROTECT(1);
+		PROTECT(s);
+	    }
+	    if (isInteger(s) || isReal(s)) {
+		s = mat2indsub(dim, s, R_NilValue);
+		UNPROTECT(1);
+		PROTECT(s);
+	    }
+	}
     }
 
     stretch = 1;
@@ -1262,7 +1264,7 @@ static SEXP SimpleListAssign(SEXP call, SEXP x, SEXP s, SEXP y, int ind)
 	    SEXP z = yi;
 	    int i;
 	    for(i = 0; i < LENGTH(t); i++, z = CDR(z))
-		SET_TAG(z, install(translateChar(STRING_ELT(t, i))));
+		SET_TAG(z, installTrChar(STRING_ELT(t, i)));
 	}
 	PROTECT(x = listAppend(x, yi));
 	nx = (int) stretch;
@@ -1288,9 +1290,7 @@ static SEXP listRemove(SEXP x, SEXP s, int ind)
     SEXP a, pa, px;
     int i, ii, *indx, ns, nx;
     R_xlen_t stretch=0;
-    const void *vmax;
-
-    vmax = vmaxget();
+    const void *vmax = vmaxget();
     nx = length(x);
     PROTECT(s = GetOneIndex(s, ind));
     PROTECT(s = makeSubscript(x, s, &stretch, R_NilValue));
@@ -1332,23 +1332,53 @@ static SEXP listRemove(SEXP x, SEXP s, int ind)
 }
 
 
-static void SubAssignArgs(SEXP args, SEXP *x, SEXP *s, SEXP *y)
+static R_INLINE int SubAssignArgs(SEXP args, SEXP *x, SEXP *s, SEXP *y)
 {
-    SEXP p;
-    if (length(args) < 2)
+    if (CDR(args) == R_NilValue)
 	error(_("SubAssignArgs: invalid number of arguments"));
     *x = CAR(args);
-    if(length(args) == 2) {
+    if (CDDR(args) == R_NilValue) {
 	*s = R_NilValue;
 	*y = CADR(args);
+	return 0;
     }
     else {
+	int nsubs = 1;
+	SEXP p;
 	*s = p = CDR(args);
-	while (CDDR(p) != R_NilValue)
+	while (CDDR(p) != R_NilValue) {
 	    p = CDR(p);
+	    nsubs++;
+	}
 	*y = CADR(p);
 	SETCDR(p, R_NilValue);
+	return nsubs;
     }
+}
+
+/* Version of DispatchOrEval for "[" and friends that speeds up simple cases.
+   Also defined in subset.c */
+static R_INLINE
+int R_DispatchOrEvalSP(SEXP call, SEXP op, const char *generic, SEXP args,
+		    SEXP rho, SEXP *ans)
+{
+    if (args != R_NilValue && CAR(args) != R_DotsSymbol) {
+	SEXP x = eval(CAR(args), rho);
+	PROTECT(x);
+	if (! OBJECT(x)) {
+	    *ans = CONS(x, evalListKeepMissing(CDR(args), rho));
+	    UNPROTECT(1);
+	    return FALSE;
+	}
+	SEXP prom = mkPROMISE(CAR(args), R_GlobalEnv);
+	SET_PRVALUE(prom, x);
+	args = CONS(prom, CDR(args));
+	UNPROTECT(1);
+    }
+    PROTECT(args);
+    int disp = DispatchOrEval(call, op, generic, args, rho, ans, 0, 0);
+    UNPROTECT(1);
+    return disp;
 }
 
 
@@ -1367,7 +1397,7 @@ SEXP attribute_hidden do_subassign(SEXP call, SEXP op, SEXP args, SEXP rho)
     /* We evaluate the first argument and attempt to dispatch on it. */
     /* If the dispatch fails, we "drop through" to the default code below. */
 
-    if(DispatchOrEval(call, op, "[<-", args, rho, &ans, 0, 0))
+    if(R_DispatchOrEvalSP(call, op, "[<-", args, rho, &ans))
 /*     if(DispatchAnyOrEval(call, op, "[<-", args, rho, &ans, 0, 0)) */
       return(ans);
 
@@ -1381,7 +1411,7 @@ SEXP attribute_hidden do_subassign_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     PROTECT(args);
 
-    SubAssignArgs(args, &x, &subs, &y);
+    nsubs = SubAssignArgs(args, &x, &subs, &y);
     
     /* If there are multiple references to an object we must */
     /* duplicate it so that only the local version is mutated. */
@@ -1393,7 +1423,6 @@ SEXP attribute_hidden do_subassign_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 	x = SETCAR(args, shallow_duplicate(x));
     
     S4 = IS_S4_OBJECT(x);
-    nsubs = length(subs);
 
     oldtype = 0;
     if (TYPEOF(x) == LISTSXP || TYPEOF(x) == LANGSXP) {
@@ -1502,7 +1531,7 @@ SEXP attribute_hidden do_subassign2(SEXP call, SEXP op, SEXP args, SEXP rho)
 {
     SEXP ans;
 
-    if(DispatchOrEval(call, op, "[[<-", args, rho, &ans, 0, 0))
+    if(R_DispatchOrEvalSP(call, op, "[[<-", args, rho, &ans))
 /*     if(DispatchAnyOrEval(call, op, "[[<-", args, rho, &ans, 0, 0)) */
       return(ans);
 
@@ -1519,7 +1548,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     PROTECT(args);
 
-    SubAssignArgs(args, &x, &subs, &y);
+    nsubs = SubAssignArgs(args, &x, &subs, &y);
     S4 = IS_S4_OBJECT(x);
 
     /* Handle NULL left-hand sides.  If the right-hand side */
@@ -1548,7 +1577,6 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
 
     dims = getAttrib(x, R_DimSymbol);
     ndims = length(dims);
-    nsubs = length(subs);
 
     /* code to allow classes to extend ENVSXP */
     if(TYPEOF(x) == S4SXP) {
@@ -1562,7 +1590,7 @@ do_subassign2_dflt(SEXP call, SEXP op, SEXP args, SEXP rho)
     if( TYPEOF(x) == ENVSXP) {
 	if( nsubs!=1 || !isString(CAR(subs)) || length(CAR(subs)) != 1 )
 	    error(_("wrong args for environment subassignment"));
-	defineVar(install(translateChar(STRING_ELT(CAR(subs), 0))), y, x);
+	defineVar(installTrChar(STRING_ELT(CAR(subs), 0)), y, x);
 	UNPROTECT(1);
 	return(S4 ? xOrig : x);
     }
@@ -1858,11 +1886,11 @@ SEXP attribute_hidden do_subassign3(SEXP call, SEXP op, SEXP args, SEXP env)
     /* replace the second argument with a string */
     SETCADR(args, input);
 
-    if(DispatchOrEval(call, op, "$<-", args, env, &ans, 0, 0))
+    if(R_DispatchOrEvalSP(call, op, "$<-", args, env, &ans))
       return(ans);
 
     if (! iS)
-	nlist = install(translateChar(STRING_ELT(input, 0)));
+	nlist = installTrChar(STRING_ELT(input, 0));
 
     return R_subassign3_dflt(call, CAR(ans), nlist, CADDR(ans));
 }

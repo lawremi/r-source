@@ -56,7 +56,8 @@ This is an introduction to the @R{} language, explaining evaluation,
 parsing, object oriented programming, computing on the language, and so
 forth.
 
-The current version of this document is @value{VERSION} @b{DRAFT}.
+@insertcopying
+
 @end ifnottex
 
 @menu

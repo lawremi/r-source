@@ -814,7 +814,7 @@ function(x, ...)
 
 ### * .writeVignetteHtmlIndex
 
-## NB SamplerCompare has a .Rnw file which produces on R code.
+## NB SamplerCompare has a .Rnw file which produces no R code.
 .writeVignetteHtmlIndex <-
 function(pkg, con, vignetteIndex = NULL)
 {
@@ -1014,7 +1014,8 @@ vignetteEngine <- local({
         result
     }
 
-    setEngine <- function(name, package, pattern, weave, tangle) {
+    setEngine <- function(name, package, pattern, weave, tangle,
+                          aspell = list()) {
         key <- engineKey(name, package)
         if (!is.null(package) && key[1L] != package)
             stop("Engine name ", sQuote(name), " and package ", sQuote(package), " do not match")
@@ -1040,7 +1041,9 @@ vignetteEngine <- local({
             else if (!is.character(pattern))
                 stop("Argument ", sQuote("pattern"), " must be a character vector or NULL and not ", sQuote(class(pattern)[1L]))
 
-            result <- list(name = key[2L], package = key[1L], pattern = pattern, weave = weave, tangle = tangle)
+            result <-
+                list(name = key[2L], package = key[1L], pattern = pattern,
+                     weave = weave, tangle = tangle, aspell = aspell)
             assign(rname, result, registry)
         }
 
@@ -1049,10 +1052,11 @@ vignetteEngine <- local({
 
     setEngine(name = "Sweave", package = "utils", pattern = NULL,
               weave = function(...) utils::Sweave(...),
-              tangle = function(...) utils::Stangle(...))
+              tangle = function(...) utils::Stangle(...),
+              aspell = list(filter = "Sweave", control = "-t"))
 
-
-    function(name, weave, tangle, pattern = NULL, package = NULL) {
+    function(name, weave, tangle, pattern = NULL, package = NULL,
+             aspell = list()) {
         if (missing(weave)) { # we're getting the engine
             getEngine(name, package)
         } else { # we're setting a new engine
@@ -1061,7 +1065,9 @@ vignetteEngine <- local({
             }
             if (missing(package))
                 package <- utils::packageName(parent.frame())
-            result <- setEngine(name, package, pattern = pattern, weave = weave, tangle = tangle)
+            result <-
+                setEngine(name, package, pattern = pattern,
+                          weave = weave, tangle = tangle, aspell = aspell)
             invisible(result)
         }
     }

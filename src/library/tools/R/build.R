@@ -3,6 +3,8 @@
 #
 #  Copyright (C) 1995-2013 The R Core Team
 #
+# NB: also copyright date in Usage.
+#
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
@@ -114,8 +116,7 @@ summaryLog <- function(Log)
         else if(Log$notes == 1L)
             printLog(Log,
                      sprintf("NOTE: There was 1 note.\n"))
-        printLog(Log,
-                 sprintf("See\n  %s\nfor details.\n", sQuote(Log$filename)))
+        cat(sprintf("See\n  %s\nfor details.\n", sQuote(Log$filename)))
     }
 }
 
@@ -397,7 +398,7 @@ get_exclude_patterns <- function()
                                full.names = TRUE))) {
             messageLog(Log, "compacting vignettes and other PDF files")
             if(compact_vignettes %in% c("gs", "gs+qpdf", "both")) {
-                gs_cmd <- find_gs_cmd(Sys.getenv("R_GSCMD", ""))
+                gs_cmd <- find_gs_cmd()
                 gs_quality <- "ebook"
             } else {
                 gs_cmd <- ""
@@ -807,7 +808,7 @@ get_exclude_patterns <- function()
                 R.version[["major"]], ".",  R.version[["minor"]],
                 " (r", R.version[["svn rev"]], ")\n", sep = "")
             cat("",
-                "Copyright (C) 1997-2011 The R Core Team.",
+                "Copyright (C) 1997-2013 The R Core Team.",
                 "This is free software; see the GNU General Public License version 2",
                 "or later for copying conditions.  There is NO warranty.",
                 sep = "\n")

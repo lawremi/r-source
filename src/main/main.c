@@ -314,7 +314,6 @@ static unsigned char DLLbuf[CONSOLE_BUFFER_SIZE+1], *DLLbufp;
 
 void R_ReplDLLinit(void)
 {
-    R_IoBufferInit(&R_ConsoleIob);
     SETJMP(R_Toplevel.cjmpbuf);
     R_GlobalContext = R_ToplevelContext = R_SessionContext = &R_Toplevel;
     R_IoBufferWriteReset(&R_ConsoleIob);
@@ -694,9 +693,17 @@ void setup_Rmainloop(void)
     volatile int doneit;
     volatile SEXP baseEnv;
     SEXP cmd;
-    FILE *fp;
     char deferred_warnings[11][250];
     volatile int ndeferred_warnings = 0;
+
+    /* In case this is a silly limit: 2^32 -3 has been seen and
+     * casting to intptr_r relies on this being smaller than 2^31 on a
+     * 32-bit platform. */
+    if(R_CStackLimit > 100000000U) 
+	R_CStackLimit = (uintptr_t)-1;
+    /* make sure we have enough head room to handle errors */
+    if(R_CStackLimit != -1)
+	R_CStackLimit = 0.95 * R_CStackLimit;
 
     InitConnections(); /* needed to get any output at all */
 
@@ -774,6 +781,7 @@ void setup_Rmainloop(void)
     /* make sure srand is called before R_tmpnam, PR#14381 */
     srand(TimeToSeed());
 
+    InitArithmetic();
     InitParser();
     InitTempDir(); /* must be before InitEd */
     InitMemory();
@@ -784,7 +792,6 @@ void setup_Rmainloop(void)
     InitDynload();
     InitOptions();
     InitEd();
-    InitArithmetic();
     InitGraphics();
     
     R_Is_Running = 1;
@@ -830,7 +837,11 @@ void setup_Rmainloop(void)
        Perhaps it makes more sense to quit gracefully?
     */
 
-    fp = R_OpenLibraryFile("base");
+#ifdef RMIN_ONLY
+    /* This is intended to support a minimal build for experimentation. */
+    if (R_SignalHandlers) init_signal_handlers();
+#else
+    FILE *fp = R_OpenLibraryFile("base");
     if (fp == NULL)
 	R_Suicide(_("unable to open the base package\n"));
 
@@ -843,12 +854,13 @@ void setup_Rmainloop(void)
 	R_ReplFile(fp, baseEnv);
     }
     fclose(fp);
+#endif
 
     /* This is where we source the system-wide, the site's and the
        user's profile (in that order).  If there is an error, we
        drop through to further processing.
     */
-
+    R_IoBufferInit(&R_ConsoleIob);
     R_LoadProfile(R_OpenSysInitFile(), baseEnv);
     /* These are the same bindings, so only lock them once */
     R_LockEnvironment(R_BaseNamespace, TRUE);
@@ -981,7 +993,6 @@ void run_Rmainloop(void)
 {
     /* Here is the real R read-eval-loop. */
     /* We handle the console until end-of-file. */
-    R_IoBufferInit(&R_ConsoleIob);
     SETJMP(R_Toplevel.cjmpbuf);
     R_GlobalContext = R_ToplevelContext = R_SessionContext = &R_Toplevel;
     R_ReplConsole(R_GlobalEnv, 0, 0);
@@ -1013,24 +1024,44 @@ static void printwhere(void)
   Rprintf("\n");
 }
 
+static void printBrowserHelp(void)
+{
+    Rprintf("n          next\n");
+    Rprintf("s          step into\n");
+    Rprintf("f          finish\n");
+    Rprintf("c or cont  continue\n");
+    Rprintf("Q          quit\n");
+    Rprintf("where      show stack\n");
+    Rprintf("help       show help\n");
+    Rprintf("<expr>     evaluate expression\n");
+}
+
 static int ParseBrowser(SEXP CExpr, SEXP rho)
 {
     int rval = 0;
     if (isSymbol(CExpr)) {
 	const char *expr = CHAR(PRINTNAME(CExpr));
-	if (!strcmp(expr, "n")) {
+	if (!strcmp(expr, "c") || !strcmp(expr, "cont")) {
+	    rval = 1;
+	    SET_RDEBUG(rho, 0);
+	} else if (!strcmp(expr, "f")) {
+	    rval = 1;
+	    RCNTXT *cntxt = R_GlobalContext;
+	    while (cntxt != R_ToplevelContext 
+		      && !(cntxt->callflag & (CTXT_RETURN | CTXT_LOOP))) {
+		cntxt = cntxt->nextcontext;
+	    }
+	    cntxt->browserfinish = 1;	    
 	    SET_RDEBUG(rho, 1);
+	    R_BrowserLastCommand = 'f';
+	} else if (!strcmp(expr, "help")) {
+	    rval = 2;
+	    printBrowserHelp();
+	} else if (!strcmp(expr, "n")) {
 	    rval = 1;
-	}
-	if (!strcmp(expr, "c")) {
-	    rval = 1;
-	    SET_RDEBUG(rho, 0);
-	}
-	if (!strcmp(expr, "cont")) {
-	    rval = 1;
-	    SET_RDEBUG(rho, 0);
-	}
-	if (!strcmp(expr, "Q")) {
+	    SET_RDEBUG(rho, 1);
+	    R_BrowserLastCommand = 'n';
+	} else if (!strcmp(expr, "Q")) {
 
 	    /* Run onexit/cend code for everything above the target.
 	       The browser context is still on the stack, so any error
@@ -1044,11 +1075,14 @@ static int ParseBrowser(SEXP CExpr, SEXP rho)
 	    SET_RDEBUG(rho, 0); /*PR#1721*/
 
 	    jump_to_toplevel();
-	}
-	if (!strcmp(expr, "where")) {
+	} else if (!strcmp(expr, "s")) {
+	    rval = 1;
+	    SET_RDEBUG(rho, 1);
+	    R_BrowserLastCommand = 's';	    
+	} else if (!strcmp(expr, "where")) {
+	    rval = 2;
 	    printwhere();
 	    /* SET_RDEBUG(rho, 1); */
-	    rval = 2;
 	}
     }
     return rval;
@@ -1107,9 +1141,10 @@ SEXP attribute_hidden do_browser(SEXP call, SEXP op, SEXP args, SEXP rho)
 	Rprintf("Called from: ");
 	tmp = asInteger(GetOption(install("deparse.max.lines"), R_BaseEnv));
 	if(tmp != NA_INTEGER && tmp > 0) R_BrowseLines = tmp;
-        if( cptr != R_ToplevelContext )
+        if( cptr != R_ToplevelContext ) {
 	    PrintValueRec(cptr->call, rho);
-        else
+	    SET_RDEBUG(cptr->cloenv, 1);
+        } else
             Rprintf("top level \n");
 
 	R_BrowseLines = 0;

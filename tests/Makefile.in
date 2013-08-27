@@ -17,6 +17,9 @@ check-recommended: test-Packages-Recommended
 include $(top_builddir)/Makeconf
 include $(srcdir)/Makefile.common
 
+@USE_RECOMMENDED_PACKAGES_FALSE@test-src-reg3 = reg-plot-latin1.R
+
+
 distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)/$(subdir)
 
 DISTFILES = Makefile.in Makefile.win Makefile.install Makefile.common \
@@ -25,9 +28,10 @@ DISTFILES = Makefile.in Makefile.win Makefile.install Makefile.common \
 	testit.tex.save testit-Ex.R.save \
 	ver20.Rd ver20.txt.save ver20.html.save ver20.tex.save ver20-Ex.R.save \
 	R-intro.Rout.save \
-	test-system.R test-system.Rout.save test-system2.c
+	test-system.R test-system.Rout.save test-system2.c \
+	arima.rda
 
-SUBDIRS = Embedding Examples Native
+SUBDIRS = Embedding Examples
 SUBDIRS_WITH_NO_BUILD = Pkgs
 
 ## SRCDIR is used by reg-tests-1a.R, reg-IO2.R and reg-packages.R
